@@ -1,0 +1,259 @@
+Continue the EVYS Medical frontend.
+
+Search and Quick Order are now complete.
+
+Do not implement backend, database, Stripe, authentication, real checkout, or real orders.
+
+This pass is specifically about NAVIGATION and the MEGA MENU.
+
+## OBJECTIVE
+
+The navigation should make EVYS feel like an established medical and laboratory supplier with a substantial catalogue.
+
+It should be:
+
+* easy to understand
+* fast to navigate
+* professional
+* compact
+* trustworthy
+* easy to scan
+
+Do not make it feel like a SaaS dashboard or a modern startup website.
+
+---
+
+## 1. MAIN NAVIGATION
+
+Inspect the current header first.
+
+Preserve the existing EVYS header design if it is already strong.
+
+The main navigation currently includes:
+
+* Shop Catalogue
+* About
+* Contact
+
+And utility actions:
+
+* Search
+* Quick Order
+* Account
+* Cart
+
+Improve hierarchy and spacing only where necessary.
+
+The primary shopping action should remain visually obvious.
+
+---
+
+## 2. SHOP CATALOGUE MEGA MENU
+
+Create/refine a professional mega menu for "Shop Catalogue".
+
+The menu should help users immediately understand the catalogue.
+
+Use categories that are already represented by the existing mock product data.
+
+Possible category groups include:
+
+### Medical Equipment
+
+* Diagnostic Equipment
+* Blood Pressure Monitors
+* Stethoscopes
+* Patient Monitoring
+* Examination Equipment
+
+### Laboratory Equipment
+
+* Microscopes
+* Pipettes
+* Laboratory Instruments
+* Laboratory Accessories
+
+### Medical Consumables
+
+* Cannulas
+* Disposable Supplies
+* Clinical Consumables
+
+### Healthcare & Workwear
+
+* Medical Scrubs
+* Healthcare Accessories
+
+IMPORTANT:
+
+Only display categories that actually exist in the current mock catalogue.
+
+Do not invent a huge catalogue simply to make the mega menu look full.
+
+---
+
+## 3. MEGA MENU DESIGN
+
+The mega menu should feel like a professional supplier catalogue.
+
+Use:
+
+* clear category headings
+* simple text links
+* subtle separators where useful
+* generous but controlled spacing
+* strong hover/focus states
+* optional small category description where useful
+
+Avoid:
+
+* giant promotional banners
+* excessive imagery
+* gradients
+* oversized cards
+* excessive rounded containers
+* unnecessary animations
+
+The user should be able to scan the menu in seconds.
+
+---
+
+## 4. CATEGORY NAVIGATION
+
+Clicking a category should take the user to the corresponding catalogue view.
+
+The category should automatically apply the appropriate catalogue context/filter.
+
+Example:
+
+Shop Catalogue
+→ Laboratory Equipment
+→ Microscopes
+→ Microscope products
+
+Keep this frontend/mock-data driven.
+
+---
+
+## 5. MOBILE NAVIGATION
+
+Design the mobile navigation intentionally.
+
+Do NOT simply squeeze the desktop mega menu into mobile.
+
+Use a clean mobile navigation drawer.
+
+Structure:
+
+EVYS MEDICAL
+
+Shop Catalogue
+→ Medical Equipment
+→ Laboratory Equipment
+→ Medical Consumables
+→ Healthcare & Workwear
+
+About
+
+Contact
+
+Quick Order
+
+Account
+
+Cart
+
+Use expandable sections where appropriate.
+
+Make sure:
+
+* touch targets are large enough
+* hierarchy is obvious
+* back navigation is clear
+* drawer can be closed easily
+* page does not scroll behind the open drawer
+
+---
+
+## 6. HEADER BEHAVIOUR
+
+Check:
+
+* desktop
+* tablet
+* mobile
+
+Ensure the header doesn't become excessively tall.
+
+If sticky header behavior already exists, refine it rather than replacing it.
+
+If it doesn't exist, only introduce sticky behavior if it genuinely improves usability without consuming too much screen space.
+
+---
+
+## 7. ACCESSIBILITY
+
+Ensure:
+
+* keyboard navigation works
+* focus states are visible
+* mega menu can be opened with keyboard
+* Escape closes the menu
+* appropriate aria labels exist
+* mobile drawer has sensible focus behavior
+
+Do not sacrifice usability for visual effects.
+
+---
+
+## 8. VISUAL RULES
+
+Preserve the approved EVYS system:
+
+Ink: #0B1726
+Primary teal: #087E8B
+Accent teal: #18A6B8
+Background: #F6F8FA
+White: #FFFFFF
+Border: #E5E9EE
+Muted: #667085
+Success: #16803C
+
+Typography remains Inter or equivalent.
+
+The target feeling:
+
+ESTABLISHED
+TRUSTWORTHY
+CLINICAL
+PREMIUM
+CALM
+MODERN
+EFFICIENT
+
+Do not redesign the homepage.
+
+Do not introduce a new visual identity.
+
+---
+
+## IMPORTANT
+
+Inspect the current navigation before modifying it.
+
+Preserve things that already work.
+
+Do not add categories that aren't supported by the current product data.
+
+Do not add promotional content just to fill empty space.
+
+Make the navigation feel like a mature catalogue, not a feature showcase.
+
+At the end report:
+
+1. What changed
+2. What was preserved
+3. Any navigation/UX issues discovered
+4. What should be tackled next
+
+Do not start backend work.

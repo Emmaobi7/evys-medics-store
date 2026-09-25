@@ -1,0 +1,458 @@
+This is the FINAL FRONTEND QUALITY PASS for EVYS Medical.
+
+The major frontend functionality is now complete:
+
+* Homepage
+* Catalogue
+* Categories
+* Search
+* Mega Menu
+* Product Detail
+* Quick Order
+* Basket
+* Responsive layouts
+* Loading states
+* Empty states
+* Error states
+* Interaction states
+* Accessibility improvements
+
+Do NOT add major new features.
+
+Do NOT implement:
+
+* backend
+* database
+* Stripe
+* authentication
+* real checkout
+* real orders
+* payment processing
+
+The purpose of this pass is to evaluate the CURRENT WEBSITE AS A SINGLE PRODUCT.
+
+==================================================
+
+1. THINK LIKE A REAL CUSTOMER
+   ==================================================
+
+Navigate through the website as if you discovered EVYS Medical for the first time.
+
+Test:
+
+Homepage
+→ Catalogue
+→ Category
+→ Product
+→ Add to Basket
+→ Basket
+
+Also test:
+
+Search
+→ Product
+→ Basket
+
+And:
+
+Quick Order
+→ SKU
+→ Product
+→ Basket
+
+Look for anything that makes the experience feel unfinished, confusing, cheap, inconsistent, or unnecessarily complicated.
+
+Fix those issues.
+
+Do NOT make changes simply because something could technically be different.
+
+==================================================
+2. ESTABLISHED BUSINESS TEST
+============================
+
+Ask throughout the audit:
+
+"Does this look like a company that has been supplying medical and laboratory equipment for years?"
+
+The answer should come from:
+
+* hierarchy
+* typography
+* spacing
+* product presentation
+* information clarity
+* restrained design
+* consistency
+* professional terminology
+* interaction quality
+
+NOT from fake claims.
+
+Do NOT invent:
+
+* years in business
+* NHS relationships
+* certifications
+* customer numbers
+* partnerships
+* awards
+* testimonials
+* statistics
+* reviews
+* regulatory claims
+
+Existing trust-bar claims remain mock/placeholder content and must not be expanded into additional invented claims.
+
+==================================================
+3. VISUAL CONSISTENCY AUDIT
+===========================
+
+Check every major page for consistency in:
+
+* typography
+* font weights
+* heading hierarchy
+* button styles
+* border radius
+* borders
+* shadows
+* spacing
+* product cards
+* badges
+* icons
+* form controls
+* colours
+* hover states
+* focus states
+
+The site should feel like one coherent design system.
+
+Approved palette:
+
+Ink:
+#0B1726
+
+Primary teal:
+#087E8B
+
+Accent teal:
+#18A6B8
+
+Background:
+#F6F8FA
+
+White:
+#FFFFFF
+
+Border:
+#E5E9EE
+
+Muted:
+#667085
+
+Success:
+#16803C
+
+Do not introduce random colours.
+
+==================================================
+4. REMOVE VISUAL NOISE
+======================
+
+Look for:
+
+* unnecessary cards
+* excessive borders
+* excessive shadows
+* repetitive sections
+* unnecessary icons
+* excessive rounded containers
+* excessive badges
+* oversized headings
+* excessive animation
+* redundant text
+* sections that exist only to fill space
+
+If something does not help the customer understand, browse, evaluate, or purchase a product, consider removing or simplifying it.
+
+The goal is:
+
+LESS, BUT BETTER.
+
+==================================================
+5. HOMEPAGE AUDIT
+=================
+
+The homepage is already visually approved.
+
+Do not redesign it.
+
+Check:
+
+* hero hierarchy
+* CTA clarity
+* product/category discovery
+* whitespace
+* section transitions
+* trust/value content
+* product presentation
+* footer
+* mobile layout
+
+Make only high-impact corrections.
+
+==================================================
+6. CATALOGUE AUDIT
+==================
+
+Check:
+
+* product grid consistency
+* filters
+* sorting
+* search context
+* category context
+* product card hierarchy
+* pricing
+* VAT presentation
+* availability
+* pagination/loading
+* mobile filtering
+
+The catalogue should feel efficient rather than decorative.
+
+==================================================
+7. PRODUCT DETAIL AUDIT
+=======================
+
+Check whether a customer can quickly answer:
+
+What is this?
+
+What does it cost?
+
+Is it available?
+
+What is the SKU?
+
+What are the important specifications?
+
+How many do I need?
+
+How do I add it to my basket?
+
+The specification section should remain particularly clear for laboratory and medical products.
+
+Do not fabricate missing specifications.
+
+==================================================
+8. BASKET AUDIT
+===============
+
+Check:
+
+* product identification
+* quantities
+* prices
+* totals
+* remove controls
+* empty state
+* CTA hierarchy
+* mobile layout
+
+The basket should feel like a serious purchasing interface.
+
+==================================================
+9. SEARCH + QUICK ORDER AUDIT
+=============================
+
+Check that there are two clearly different customer journeys:
+
+BROWSE:
+Catalogue → Product → Basket
+
+BUY WHAT I ALREADY KNOW:
+Search / SKU → Product → Basket
+
+Neither should compete unnecessarily with the other.
+
+==================================================
+10. HEADER + FOOTER
+===================
+
+Check the header at:
+
+* desktop
+* tablet
+* mobile
+
+Check:
+
+* logo hierarchy
+* navigation
+* mega menu
+* search
+* Quick Order
+* account
+* basket
+* mobile drawer
+
+Then audit the footer.
+
+The footer should feel complete and professional without becoming enormous.
+
+Use only information that actually exists in the project.
+
+Do not invent company details.
+
+==================================================
+11. MOBILE QUALITY
+==================
+
+Test narrow mobile layouts.
+
+Look specifically for:
+
+* horizontal overflow
+* awkward wrapping
+* oversized whitespace
+* tiny controls
+* broken grids
+* clipped text
+* unusable specification tables
+* sticky elements covering content
+* navigation problems
+* basket problems
+
+Fix real issues.
+
+Do not redesign mobile unnecessarily.
+
+==================================================
+12. ACCESSIBILITY
+=================
+
+Perform a final accessibility pass.
+
+Check:
+
+* semantic HTML
+* heading hierarchy
+* keyboard navigation
+* visible focus
+* button labels
+* form labels
+* alt text
+* colour contrast
+* touch targets
+* modal/drawer behavior
+
+Do not compromise the visual design.
+
+==================================================
+13. PERFORMANCE / FRONTEND QUALITY
+==================================
+
+Without introducing unnecessary dependencies, check for obvious frontend issues:
+
+* unnecessary duplicated components
+* excessive client-side work
+* unnecessarily large assets
+* broken image states
+* console errors
+* obvious React warnings
+* inconsistent component implementations
+
+Do not perform a large architectural rewrite.
+
+Fix obvious issues only.
+
+==================================================
+14. PLACEHOLDER CONTENT AUDIT
+=============================
+
+Identify content that is clearly placeholder/mock data.
+
+Do not remove useful mock content needed for the frontend demonstration.
+
+But make sure placeholder claims are not presented as verified real-world facts.
+
+Do not create fake:
+
+* testimonials
+* customer logos
+* reviews
+* certifications
+* statistics
+* company history
+* regulatory relationships
+
+==================================================
+15. FINAL CLIENT-DEMO STANDARD
+==============================
+
+Imagine the client is sitting beside us and we open:
+
+Homepage
+Catalogue
+Product
+Basket
+Search
+Quick Order
+Mobile view
+
+There should be no obvious:
+
+"this is just a demo"
+
+feeling caused by poor UX, broken layouts, inconsistent styling, or unfinished states.
+
+Mock data is acceptable.
+
+Mock functionality is acceptable.
+
+Unpolished UX is not.
+
+==================================================
+IMPORTANT
+=========
+
+Do NOT keep changing things forever.
+
+Make the smallest changes that materially improve the product.
+
+If a component is already good:
+
+LEAVE IT ALONE.
+
+If a section is unnecessary:
+
+SIMPLIFY IT.
+
+If something is broken:
+
+FIX IT.
+
+If something is merely a matter of personal preference:
+
+DO NOT CHANGE IT.
+
+At the end provide a concise report:
+
+### Fixed
+
+List the meaningful improvements.
+
+### Preserved
+
+List important areas that were already strong and intentionally left alone.
+
+### Remaining
+
+List only genuine remaining issues.
+
+### Backend Readiness
+
+State whether the frontend is now structurally ready for us to begin planning the backend integration.
+
+Do NOT implement the backend yet.

@@ -1,0 +1,253 @@
+Continue the EVYS Medical frontend from the current project state.
+
+The approved visual identity and existing homepage design are already established. DO NOT redesign the brand or randomly introduce a new visual style.
+
+We are still in FRONTEND/MOCK DATA ONLY mode.
+
+Do not implement:
+
+* Stripe
+* backend
+* database
+* authentication
+* real checkout
+* real order processing
+* payment integration
+
+Focus this pass on the core purchasing journey:
+
+CATALOGUE → PRODUCT DETAIL → ADD TO BASKET → BASKET
+
+### 1. PRODUCT CATALOGUE
+
+Inspect the existing catalogue implementation first.
+
+Improve only where necessary.
+
+The catalogue should feel like an established UK medical/laboratory supplier rather than a generic ecommerce template.
+
+Ensure:
+
+* clear page title and category context
+* useful category/filter controls
+* sorting
+* clean product grid
+* consistent card heights
+* strong product imagery
+* product category
+* product name
+* SKU where appropriate
+* rating where appropriate
+* stock/availability
+* price
+* VAT-inclusive pricing
+* quantity/add-to-basket interaction
+* subtle hover states
+* clean loading state
+* useful empty/no-results state
+* useful error state
+
+Do not overload product cards with information.
+
+Preserve the current card design if it is already strong.
+
+### 2. FILTERING
+
+Create a polished filtering experience.
+
+Desktop:
+
+* compact sidebar or clearly structured filter area
+
+Mobile:
+
+* filter drawer/sheet
+
+Potential filters from the existing mock data:
+
+* Category
+* Price
+* Availability
+* Brand, only if brands actually exist in the mock data
+* Product type where relevant
+
+Do not invent unnecessary filters.
+
+Filtering should feel fast and obvious.
+
+### 3. SORTING
+
+Provide sensible options such as:
+
+* Relevance
+* Price: Low to High
+* Price: High to Low
+* Name: A–Z
+
+Do not add meaningless ecommerce sorting options.
+
+### 4. PRODUCT DETAIL PAGE
+
+Make the product detail page feel like a professional medical supplier catalogue.
+
+Structure:
+
+LEFT:
+
+* large product image
+* thumbnail/gallery support if existing assets justify it
+
+RIGHT:
+
+* category
+* product name
+* SKU
+* rating if available
+* stock/availability
+* price
+* VAT-inclusive price
+* quantity selector
+* Add to Basket
+* relevant delivery information
+
+Below:
+
+* Description
+* Specifications
+* Product information
+* Related products
+
+Specifications should be especially clean.
+
+For laboratory/medical products, users need to quickly understand technical information.
+
+Use a structured specification table rather than large walls of text.
+
+Examples:
+
+Specification | Value
+
+Do not fabricate technical specifications that are not present in the mock data.
+
+### 5. ADD TO BASKET
+
+Make the interaction feel polished.
+
+When the user adds a product:
+
+* button should provide clear confirmation
+* basket count should update
+* avoid disruptive unnecessary modals
+* allow the user to continue shopping
+* preserve selected quantity
+
+If a mini-cart/cart drawer already exists, refine it rather than replacing it.
+
+### 6. BASKET PAGE
+
+Build/refine the basket page as a serious purchasing interface.
+
+Show:
+
+* product
+* SKU
+* quantity
+* unit price
+* line total
+* remove action
+* subtotal
+* VAT treatment where appropriate
+* delivery information
+* total
+* checkout CTA
+
+Use mock checkout behavior only.
+
+Do not connect payment.
+
+Include a polished empty basket state.
+
+### 7. RESPONSIVE BEHAVIOUR
+
+Pay particular attention to mobile.
+
+Do not simply shrink the desktop layout.
+
+On mobile:
+
+* product images remain useful
+* quantity controls remain easy to tap
+* filters become a drawer/sheet
+* basket information remains readable
+* CTAs remain obvious
+* product specifications remain usable
+* navigation remains compact
+
+### 8. INTERACTION QUALITY
+
+Add subtle professional interaction states:
+
+* hover
+* focus
+* active
+* disabled
+* loading
+* success
+* error
+
+Avoid excessive animation.
+
+The site should feel calm and established.
+
+### 9. DESIGN RULE
+
+Keep the existing EVYS Medical visual system:
+
+Ink: #0B1726
+Primary teal: #087E8B
+Accent teal: #18A6B8
+Background: #F6F8FA
+White: #FFFFFF
+Border: #E5E9EE
+Muted: #667085
+Success: #16803C
+
+Typography:
+Inter or equivalent.
+
+The desired feeling remains:
+
+Established.
+Trustworthy.
+Clinical.
+Premium.
+Calm.
+Modern.
+Efficient.
+
+Not:
+
+* futuristic
+* startup-like
+* overly rounded
+* flashy
+* generic hospital template
+* overanimated
+
+### IMPORTANT
+
+Before changing anything, inspect the existing implementation.
+
+If something is already good, KEEP IT.
+
+Do not rebuild components merely for the sake of rebuilding them.
+
+Make the smallest high-impact improvements necessary.
+
+At the end, summarize:
+
+1. What you changed
+2. What you deliberately left unchanged
+3. Any UX issues you discovered that should be handled in the next pass
+
+Do not move into backend/payment work yet.

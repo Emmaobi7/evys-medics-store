@@ -1,0 +1,344 @@
+Continue the EVYS Medical frontend.
+
+The major customer-facing flows are now implemented:
+
+Homepage
+Catalogue
+Product Detail
+Search
+Quick Order
+Basket
+Navigation
+Mega Menu
+
+Do NOT add new major features in this pass.
+
+Do NOT implement:
+
+* backend
+* database
+* Stripe
+* authentication
+* real checkout
+* real orders
+* payment processing
+
+This pass is strictly about POLISHING THE EXISTING EXPERIENCE.
+
+## 1. AUDIT THE CURRENT UI
+
+First inspect the entire existing frontend.
+
+Do not blindly modify every component.
+
+Identify places where the interface lacks:
+
+* loading feedback
+* empty states
+* error handling
+* disabled states
+* success confirmation
+* focus states
+* responsive behavior
+
+Fix only meaningful issues.
+
+---
+
+# 2. LOADING STATES
+
+Create consistent loading behavior for:
+
+### Catalogue
+
+Use a clean skeleton state for product cards.
+
+### Product Detail
+
+Use a skeleton for:
+
+* image
+* title
+* pricing
+* availability
+* specifications
+
+### Search
+
+Show an appropriate lightweight loading state while searching.
+
+### Quick Order
+
+When looking up an SKU, show a compact loading indicator inside the relevant action rather than replacing the entire page.
+
+Do not over-animate skeletons.
+
+---
+
+# 3. EMPTY STATES
+
+Create polished empty states for:
+
+### Empty Basket
+
+Example structure:
+
+Your basket is empty.
+
+"Browse our medical and laboratory supplies to get started."
+
+[ Browse Products ]
+
+Keep it simple.
+
+### No Search Results
+
+Clearly communicate:
+
+"No products found"
+
+Then provide useful next actions:
+
+[ Browse Catalogue ]
+
+[ Quick Order ]
+
+Do not invent alternative products just to fill the page.
+
+### Empty Category
+
+If a category contains no mock products, communicate that clearly without making the interface look broken.
+
+---
+
+# 4. ERROR STATES
+
+Create useful user-facing errors for:
+
+### Product unavailable
+
+Explain that the product is currently unavailable.
+
+### Invalid SKU
+
+Use the Quick Order invalid SKU state already established.
+
+### Generic catalogue error
+
+Use a professional message such as:
+
+"Something went wrong while loading the catalogue."
+
+[ Try Again ]
+
+Do not expose stack traces, API errors, database errors, or technical implementation details.
+
+---
+
+# 5. ADD-TO-BASKET FEEDBACK
+
+Review every Add to Basket interaction.
+
+The user should immediately understand that the action succeeded.
+
+Prefer subtle confirmation such as:
+
+"Added to basket"
+
+with access to:
+
+[ View Basket ]
+
+Avoid intrusive modal dialogs unless the existing UX genuinely benefits from one.
+
+Make sure:
+
+* basket count updates
+* selected quantity is preserved
+* repeated clicks behave predictably
+* disabled/loading states prevent accidental duplicate actions
+
+---
+
+# 6. QUANTITY CONTROLS
+
+Audit quantity controls everywhere.
+
+Ensure:
+
+* minus button cannot produce invalid quantities
+* quantity never becomes negative
+* direct numeric entry behaves correctly if supported
+* buttons have clear disabled states
+* mobile touch targets are comfortable
+* basket totals update immediately
+
+Use sensible behavior for quantity 1.
+
+---
+
+# 7. FORM VALIDATION
+
+Audit:
+
+* Search
+* Quick Order
+* quantity inputs
+* any existing checkout-related mock fields
+
+Errors should appear close to the relevant input.
+
+Use clear human language.
+
+Avoid red text everywhere.
+
+Only use error styling when something actually needs attention.
+
+---
+
+# 8. BUTTON STATES
+
+Every important button should have:
+
+Default
+Hover
+Active
+Focus
+Disabled
+Loading
+
+Pay particular attention to:
+
+* Shop Products
+* Browse Categories
+* Quick Order
+* Add to Basket
+* View Basket
+* Catalogue controls
+
+Do not introduce excessive animation.
+
+---
+
+# 9. KEYBOARD ACCESSIBILITY
+
+Audit the entire existing experience.
+
+Ensure:
+
+* interactive elements can be reached with Tab
+* focus states are clearly visible
+* Enter activates appropriate controls
+* Escape closes overlays/drawers
+* mega menu behaves correctly
+* search suggestions are keyboard navigable
+* mobile/navigation dialogs can be exited with Escape where appropriate
+
+Do not remove browser focus outlines unless replacing them with an equally visible custom focus state.
+
+---
+
+# 10. MOBILE AUDIT
+
+Check the existing pages at narrow mobile widths.
+
+Specifically look for:
+
+* horizontal scrolling
+* overflowing product names
+* broken buttons
+* oversized images
+* cramped quantity controls
+* specification tables overflowing
+* filters becoming unusable
+* mega menu overflow
+* basket layout breaking
+* long SKU values breaking layouts
+
+Fix actual issues rather than redesigning mobile.
+
+---
+
+# 11. LONG CONTENT TEST
+
+Use the existing mock data to test:
+
+* long product names
+* long category names
+* long specification values
+* long SKUs
+* missing optional product images
+* products without ratings
+* products without old prices
+* products with different availability states
+
+The UI should remain stable.
+
+Do not fabricate new business information.
+
+---
+
+# 12. VISUAL CONSISTENCY
+
+Check consistency across:
+
+Homepage
+Catalogue
+Product Detail
+Search
+Quick Order
+Basket
+Navigation
+
+Make sure spacing, typography, buttons, borders, radii, shadows, badges and interaction states feel like ONE EVYS Medical product.
+
+Preserve the approved visual identity:
+
+Ink: #0B1726
+Primary teal: #087E8B
+Accent teal: #18A6B8
+Background: #F6F8FA
+White: #FFFFFF
+Border: #E5E9EE
+Muted: #667085
+Success: #16803C
+
+Do not introduce new colors without a clear functional reason.
+
+---
+
+# IMPORTANT DESIGN PRINCIPLE
+
+This is a REFINEMENT PASS.
+
+Do not add:
+
+* dashboards
+* loyalty systems
+* wishlists
+* recommendations engines
+* AI assistants
+* comparison tools
+* promotional popups
+* unnecessary animations
+* new major pages
+
+The goal is not "more".
+
+The goal is:
+
+CLEAN.
+STABLE.
+FAST.
+CLEAR.
+PROFESSIONAL.
+
+At the end, report:
+
+1. What states were added/fixed
+2. What responsive issues were fixed
+3. What accessibility issues were fixed
+4. What existing components were deliberately left unchanged
+5. Any remaining issues worth addressing
+
+Do not start backend work.

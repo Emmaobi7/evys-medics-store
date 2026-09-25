@@ -1,0 +1,402 @@
+We are building a premium medical and laboratory supplies e-commerce website.
+
+IMPORTANT:
+This phase is FRONTEND/UI ONLY.
+
+Do NOT implement:
+- Stripe
+- payment processing
+- backend APIs
+- database
+- authentication
+- real order processing
+- CMS
+- external commerce platforms
+
+We will add those gradually later.
+
+The goal of this phase is to build a polished, production-quality frontend with realistic mock product data and clean component architecture so backend functionality can be plugged in later without redesigning the UI.
+
+PROJECT DIRECTION
+
+The business sells medical and laboratory supplies in the UK.
+
+Products include:
+- laboratory equipment
+- microscopes
+- pipette equipment
+- medical devices
+- blood pressure monitors
+- stethoscopes
+- medical consumables
+- cannulas
+- medical scrubs
+- healthcare accessories
+- diagnostic equipment
+
+TARGET USERS
+
+- clinics
+- hospitals
+- laboratories
+- healthcare professionals
+- schools/training institutions
+- businesses
+- individual healthcare customers
+
+DESIGN DIRECTION
+
+Create a premium, modern medical-commerce experience.
+
+The website should feel:
+- trustworthy
+- clinical
+- premium
+- efficient
+- modern
+- calm
+- highly usable
+
+Avoid:
+- generic hospital website aesthetics
+- excessive gradients
+- cheesy medical stock photography
+- excessive animations
+- overly rounded childish UI
+- clutter
+- unnecessary decorative elements
+
+VISUAL SYSTEM
+
+Primary colors:
+
+Ink:
+#0B1726
+
+Primary teal:
+#087E8B
+
+Accent teal:
+#18A6B8
+
+Background:
+#F6F8FA
+
+White:
+#FFFFFF
+
+Border:
+#E5E9EE
+
+Muted text:
+#667085
+
+Success:
+#16803C
+
+Use navy primarily for typography and structural elements.
+Use teal for important interactive elements and brand recognition.
+
+TYPOGRAPHY
+
+Use a modern clean sans-serif such as Inter.
+
+Strong hierarchy.
+
+Large confident headings.
+
+Compact but highly readable body text.
+
+LAYOUT
+
+Desktop-first responsive design, but mobile must be excellent.
+
+Use a wide centered container.
+
+Generous whitespace.
+
+Avoid unnecessarily huge sections.
+
+The user should be able to reach products quickly.
+
+HEADER
+
+Create a polished responsive header.
+
+Desktop:
+
+Logo
+Shop
+Categories
+About
+Contact
+
+Right side:
+Search
+Account
+Cart
+
+The header should become sticky after scrolling.
+
+Mobile:
+Logo
+Search
+Cart
+Menu
+
+HOME PAGE
+
+Build the following sections:
+
+1. Announcement/trust bar
+
+Example:
+"UK delivery • Secure checkout • Professional healthcare supplies"
+
+2. Main navigation
+
+3. Hero
+
+Headline:
+
+"Medical supplies.
+Delivered with confidence."
+
+Supporting text:
+
+"Professional medical, laboratory and healthcare essentials for organisations and individuals across the UK."
+
+Primary CTA:
+"Shop products"
+
+Secondary CTA:
+"Browse categories"
+
+Use a premium medical/laboratory product visual rather than a generic doctor stock photo.
+
+4. Featured categories
+
+Create visual category cards:
+
+Laboratory Equipment
+Medical Equipment
+Consumables
+Medical Apparel
+Diagnostics
+Healthcare Accessories
+
+5. Featured products
+
+Display realistic mock products.
+
+Use products such as:
+
+- Omron Blood Pressure Monitor
+- Laboratory Microscope
+- Stainless Steel Pipette Stand
+- Clinical Stethoscope
+- Medical Scrub Set
+- IV Cannula
+- Digital Thermometer
+- Laboratory Tube Rack
+
+Each product should have:
+- image
+- category
+- product name
+- price in GBP
+- optional badge
+- add-to-basket button
+
+6. Trust/value section
+
+Three or four concise benefits:
+
+Reliable Products
+Professional-grade equipment and healthcare essentials.
+
+UK Delivery
+Fast and straightforward delivery across the UK.
+
+Secure Checkout
+Safe and convenient online purchasing.
+
+Built for Professionals
+Products selected for healthcare, laboratory and business use.
+
+7. Promotional/product collection section
+
+Create a visually strong section for featured medical essentials.
+
+8. CTA
+
+"Ready to stock your practice?"
+
+"Explore our full range of medical and laboratory supplies."
+
+CTA:
+"Shop all products"
+
+9. Footer
+
+Include:
+Shop
+Categories
+Company
+Support
+Contact
+Delivery information
+Returns
+Privacy
+Terms
+
+Include social links placeholders.
+
+SHOP PAGE
+
+Build a complete frontend shop experience.
+
+Include:
+
+- page heading
+- search
+- category filter
+- price filter
+- sorting
+- product grid
+- pagination/load more
+- mobile filter drawer
+
+PRODUCT CARD
+
+Product cards must feel premium and consistent.
+
+Include:
+- image
+- category
+- product name
+- price
+- availability
+- add to basket
+
+Hover interactions should be subtle.
+
+PRODUCT DETAIL PAGE
+
+Build a complete product page with mock data.
+
+Layout:
+
+Image gallery on left.
+
+Product information on right:
+
+category
+product name
+rating
+price
+short description
+availability
+quantity selector
+Add to basket
+Buy now
+
+Below:
+
+Description
+Specifications
+Delivery information
+
+RELATED PRODUCTS
+
+Add related products below.
+
+CART UI
+
+Build the cart frontend now using local mock state only.
+
+Cart should support:
+
+- add product
+- remove product
+- increase quantity
+- decrease quantity
+- subtotal
+- estimated delivery
+- total
+
+Do not connect payment yet.
+
+Use a cart drawer from the header and a dedicated cart page.
+
+INTERACTION QUALITY
+
+The website should feel smooth.
+
+Use subtle:
+- hover transitions
+- image scale
+- button transitions
+- cart drawer animation
+- page transitions where appropriate
+- skeleton loading states
+
+Do not overanimate.
+
+ARCHITECTURE
+
+Create reusable components.
+
+Suggested structure:
+
+components/
+  Header
+  Footer
+  SearchBar
+  ProductCard
+  ProductGrid
+  CategoryCard
+  CategoryGrid
+  CartDrawer
+  QuantitySelector
+  Button
+  Badge
+  ProductGallery
+  ProductInfo
+  TrustSection
+
+data/
+  products
+  categories
+
+Use TypeScript types/interfaces for Product, Category and CartItem.
+
+Keep product data separate from UI components.
+
+The architecture must make it easy to replace mock product data with a real API/database later.
+
+IMPORTANT IMPLEMENTATION PRINCIPLE
+
+Do not over-engineer.
+
+We are intentionally building the frontend first.
+
+Every future backend capability should be able to plug into this frontend without requiring a major UI rewrite.
+
+Before coding, inspect the existing project structure and determine the current framework/build setup.
+
+Then implement the UI incrementally.
+
+Start with:
+1. global design system
+2. header
+3. homepage
+4. product cards
+5. category cards
+6. shop page
+7. product detail
+8. cart UI
+
+Do not stop at a wireframe.
+
+Make it feel like a real premium e-commerce product.

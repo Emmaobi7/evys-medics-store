@@ -1,0 +1,208 @@
+Continue the EVYS Medical frontend refinement.
+
+The catalogue → product detail → basket pass is now complete.
+
+Stay in FRONTEND/MOCK DATA ONLY mode.
+
+Do NOT implement backend, database, Stripe, authentication, real orders, or real checkout.
+
+## 1. SEARCH EXPERIENCE
+
+Refine the existing EVYS Medical search experience.
+
+Search should support the mock product catalogue by:
+
+* product name
+* SKU
+* category
+* relevant product keywords
+
+As the user types, provide a polished search suggestion experience.
+
+Suggestions can show:
+
+* product image
+* product name
+* SKU
+* price
+* category
+
+Keep the dropdown compact and professional.
+
+Do not make it look like an AI search interface.
+
+The search experience should feel like a mature ecommerce supplier catalogue.
+
+### Search results
+
+Create/refine the search results state with:
+
+* search query
+* result count
+* relevant products
+* sorting
+* filters
+* clean empty state
+
+For no results, show:
+
+"No products found"
+
+Then provide useful alternatives such as:
+
+* checking spelling
+* browsing categories
+* using Quick Order
+
+Do not invent products just to populate the result.
+
+### Search interactions
+
+Support:
+
+* keyboard navigation
+* Enter to search
+* Escape to close suggestions
+* clear search
+* visible focus states
+* mobile-friendly search
+
+Keep animations subtle.
+
+---
+
+## 2. QUICK ORDER
+
+EVYS should have a dedicated "Quick Order" experience for professional buyers.
+
+The goal:
+
+SKU → identify product → quantity → add to basket
+
+Create a clean page/modal based on the existing EVYS visual system.
+
+Example structure:
+
+Quick Order
+
+"Already know what you need? Enter a product SKU to add it directly to your basket."
+
+[ SKU ]
+
+[ Find Product ]
+
+After a valid mock SKU:
+
+Product image
+Product name
+SKU
+Price
+Availability
+
+Quantity [-] 1 [+]
+
+[ Add to Basket ]
+
+After adding:
+
+Show a clear confirmation and allow:
+
+[ Continue Quick Order ]
+[ View Basket ]
+
+---
+
+## 3. MULTIPLE SKU SUPPORT
+
+If the implementation can support it cleanly without making the interface complicated, allow multiple SKU rows:
+
+SKU | Product | Qty | Price | Remove
+
+[ + Add another item ]
+
+[ Add all to basket ]
+
+However, do NOT force this feature if it makes the UX significantly more complicated.
+
+The single-SKU flow must be excellent first.
+
+---
+
+## 4. INVALID SKU
+
+Create a polished invalid SKU state.
+
+Example:
+
+"SKU not found"
+
+"We couldn't find a product matching that SKU. Check the code and try again."
+
+Provide:
+
+* Try again
+* Browse catalogue
+
+Do not expose technical errors.
+
+---
+
+## 5. MOBILE
+
+Make Search and Quick Order properly responsive.
+
+Mobile search should be easy to access from the header.
+
+Quick Order should not require horizontal scrolling.
+
+SKU and quantity inputs should be comfortable to use with touch.
+
+---
+
+## 6. DESIGN
+
+Preserve the approved EVYS Medical system:
+
+Ink: #0B1726
+Primary teal: #087E8B
+Accent teal: #18A6B8
+Background: #F6F8FA
+White: #FFFFFF
+Border: #E5E9EE
+Muted: #667085
+Success: #16803C
+
+Keep:
+
+* sharp professional typography
+* restrained borders
+* subtle shadows
+* generous whitespace
+* premium product presentation
+* calm interactions
+
+Do NOT introduce:
+
+* AI-looking interfaces
+* excessive rounded cards
+* gradients everywhere
+* flashy animations
+* unnecessary icons
+* dashboard-like complexity
+
+## IMPORTANT
+
+Inspect the existing Search and Quick Order implementation before changing it.
+
+Preserve anything that is already good.
+
+Make the smallest high-impact improvements.
+
+When finished, report:
+
+1. What changed
+2. What was already good and preserved
+3. Any remaining UX issues
+4. What you recommend tackling next
+
+Do not start backend implementation.

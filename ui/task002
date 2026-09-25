@@ -1,0 +1,404 @@
+The current visual direction is APPROVED. Do not redesign the existing theme, color palette, typography, spacing system, or overall aesthetic.
+
+The site currently feels like an established medical supplier that has been operating for years but now has a modern digital presence. PRESERVE THAT FEEL.
+
+Now deepen the experience and make the frontend feel even more like a serious, established UK medical and laboratory supplier.
+
+FRONTEND/UI ONLY.
+Do not implement Stripe, backend APIs, database, authentication, CMS, real order processing, or external commerce integrations yet.
+
+Everything should use realistic mock data and be architected so the backend can be plugged in later.
+
+==================================================
+1. TRUST / ESTABLISHED SUPPLIER SECTION
+==================================================
+
+Add a polished section communicating reliability without making unverifiable claims.
+
+Use messaging such as:
+
+"Professional healthcare supplies, made simple."
+
+"Supplying medical, laboratory and healthcare essentials for professionals, organisations and individuals across the UK."
+
+Create 4 concise trust points:
+
+Professional-grade products
+Carefully selected equipment and healthcare essentials.
+
+UK-wide delivery
+Straightforward delivery for customers across the UK.
+
+Secure purchasing
+A clear and convenient online buying experience.
+
+Reliable support
+Help when you need it.
+
+Do NOT invent:
+- hospital partnerships
+- NHS partnerships
+- customer logos
+- certifications
+- years in business
+- fake statistics
+- fake reviews
+
+The company should feel established through design quality and information architecture, not fabricated claims.
+
+==================================================
+2. PROFESSIONAL MEGA MENU
+==================================================
+
+Upgrade the Shop navigation into a polished desktop mega menu.
+
+Categories:
+
+MEDICAL EQUIPMENT
+- Blood Pressure Monitors
+- Stethoscopes
+- Diagnostic Equipment
+- Patient Equipment
+- Monitoring Equipment
+
+LABORATORY
+- Microscopes
+- Pipettes
+- Laboratory Equipment
+- Lab Accessories
+- Laboratory Consumables
+
+MEDICAL CONSUMABLES
+- Cannulas
+- Gloves
+- Syringes
+- Clinical Consumables
+- Infection Control
+
+MEDICAL APPAREL
+- Scrubs
+- Medical Uniforms
+- Protective Wear
+- Healthcare Accessories
+
+The mega menu should:
+- open smoothly
+- be easy to scan
+- have strong typography hierarchy
+- use subtle dividers
+- optionally show a small featured category/product visual
+- work beautifully on desktop
+
+On mobile, convert it into an accordion category menu.
+
+==================================================
+3. BETTER PRODUCT SEARCH UI
+==================================================
+
+Upgrade the search experience.
+
+Desktop search should be prominent but elegant.
+
+When the user clicks/focuses the search field, show a polished search overlay/dropdown.
+
+Use mock results.
+
+Example:
+
+Search:
+"stetho"
+
+Results:
+
+Stethoscopes
+12 products
+
+Featured products:
+Clinical Stethoscope
+£24.99
+
+Professional Dual Head Stethoscope
+£39.99
+
+Show:
+- product image
+- product name
+- category
+- price
+
+Also include:
+
+"View all results"
+
+Add keyboard-friendly interaction where practical.
+
+The architecture should allow this mock search logic to later be replaced by a real API.
+
+==================================================
+4. RICHER PRODUCT DETAIL PAGE
+==================================================
+
+Upgrade the product detail page.
+
+Keep the existing visual style.
+
+Product information should include:
+
+CATEGORY
+Medical Equipment
+
+PRODUCT NAME
+Professional Clinical Stethoscope
+
+PRICE
+£39.99
+
+AVAILABILITY
+In stock
+
+SKU
+MED-10482
+
+Then:
+
+Short product description.
+
+Quantity selector.
+
+Add to basket.
+
+Buy now.
+
+Below the main product area create:
+
+PRODUCT INFORMATION
+
+A clean specification table.
+
+Example:
+
+Product type     Clinical stethoscope
+Material         Stainless steel
+Use              Clinical examination
+Colour           Black
+SKU              MED-10482
+
+Then create:
+
+DELIVERY INFORMATION
+
+"UK delivery available."
+
+"Delivery options and estimated times are shown during checkout."
+
+Then:
+
+RELATED PRODUCTS
+
+Show 4 relevant products.
+
+The product page should feel like a professional supplier catalogue rather than a generic online store.
+
+==================================================
+5. QUICK ORDER ENTRY POINT
+==================================================
+
+Add a subtle "Quick order" option near the main search/shop navigation.
+
+This is important because professional customers may already know the exact product or SKU they need.
+
+Create a frontend-only Quick Order experience.
+
+Example:
+
+QUICK ORDER
+
+"Already know what you need?"
+
+Enter product name or SKU.
+
+[ MED-10482 ]
+
+Quantity [ 10 ]
+
+[ Add to basket ]
+
+Use mock product lookup.
+
+Allow:
+- product name
+- SKU
+- quantity
+- add to basket
+
+Make this feel like a useful professional feature, not a gimmick.
+
+==================================================
+6. CATEGORY LANDING EXPERIENCE
+==================================================
+
+Make category pages feel substantial.
+
+Example:
+
+MEDICAL EQUIPMENT
+
+"Reliable equipment for clinical and professional use."
+
+Then:
+
+subcategory navigation
+
+Featured products
+
+All products
+
+Filters
+
+Sort
+
+Use realistic product data.
+
+Each category should visually feel like part of a large, well-organised catalogue.
+
+==================================================
+7. SHOP FILTERING
+==================================================
+
+Improve the existing shop page.
+
+Desktop sidebar:
+
+Category
+Availability
+Price
+Product type
+
+Sorting:
+
+Featured
+Price: Low to high
+Price: High to low
+Newest
+
+Mobile:
+
+Use a filter drawer.
+
+Filters should update the mock product grid locally.
+
+No backend required.
+
+==================================================
+8. MICRO-INTERACTIONS
+==================================================
+
+Keep animations subtle and premium.
+
+Use:
+
+- smooth hover transitions
+- gentle product image zoom
+- buttons responding naturally
+- mega menu animation
+- search dropdown animation
+- cart drawer animation
+- filter drawer animation
+- subtle page transitions
+
+DO NOT overanimate.
+
+The website should feel fast and efficient.
+
+==================================================
+9. IMPORTANT DESIGN RULE
+==================================================
+
+Do NOT make the site feel like a startup trying too hard to look futuristic.
+
+The visual identity should communicate:
+
+Established
+Professional
+Trustworthy
+Efficient
+Modern
+Clinical
+Premium
+
+Think:
+
+"A medical supplier that hospitals, clinics, laboratories and professionals would be comfortable buying from."
+
+Not:
+
+"AI startup medical website."
+
+==================================================
+10. RESPONSIVENESS
+==================================================
+
+Check all new components carefully on:
+
+Desktop
+Tablet
+Mobile
+
+Especially:
+
+- mega menu
+- search
+- product grids
+- product detail
+- quick order
+- filters
+- cart drawer
+
+Mobile should feel deliberately designed, not merely compressed.
+
+==================================================
+11. CODE QUALITY
+==================================================
+
+Keep the existing component architecture clean.
+
+Do not duplicate UI unnecessarily.
+
+Keep mock product/category data separate from components.
+
+Use TypeScript types.
+
+Make components reusable.
+
+Do not introduce unnecessary dependencies.
+
+Do not modify working parts of the existing design unless required.
+
+==================================================
+FINAL GOAL
+==================================================
+
+When this phase is finished, the site should feel like a complete, premium frontend for an established UK medical and laboratory supplier.
+
+A user should naturally be able to:
+
+Homepage
+→ browse category
+→ search product
+→ open product
+→ inspect specifications
+→ add quantity
+→ add to basket
+→ view basket
+
+And a professional customer should also see:
+
+Search
+→ Quick Order
+→ SKU
+→ quantity
+→ Add to basket
+
+Do not implement the backend yet.
+
+Make the frontend feel finished enough that we could confidently show it to the client before discussing the technical backend.
