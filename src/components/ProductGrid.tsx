@@ -1,9 +1,11 @@
 import React from 'react';
 import { Product } from '../types';
 import { ProductCard } from './ProductCard';
+import { SkeletonProductCard } from './SkeletonLoader';
 
 interface ProductGridProps {
   products: Product[];
+  isLoading?: boolean;
   onSelectProduct: (product: Product) => void;
   onQuickView?: (product: Product) => void;
   emptyMessage?: string;
@@ -11,10 +13,21 @@ interface ProductGridProps {
 
 export const ProductGrid: React.FC<ProductGridProps> = ({
   products,
+  isLoading = false,
   onSelectProduct,
   onQuickView,
   emptyMessage = 'No medical supplies found matching your criteria.',
 }) => {
+  if (isLoading) {
+    return (
+      <div className="product-grid" aria-busy="true" aria-label="Loading supplies">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <SkeletonProductCard key={i} />
+        ))}
+      </div>
+    );
+  }
+
   if (products.length === 0) {
     return (
       <div

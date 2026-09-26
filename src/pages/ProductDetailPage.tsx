@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronRight, Truck, Info, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { Product } from '../types';
 import { PRODUCTS } from '../data/products';
+import { fetchProductBySlug, fetchRelatedProducts } from '../api/client';
 import { ProductGallery } from '../components/ProductGallery';
 import { ProductInfo } from '../components/ProductInfo';
 import { ProductGrid } from '../components/ProductGrid';
@@ -16,25 +17,47 @@ interface ProductDetailPageProps {
 }
 
 export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
-  product,
+  product: initialProduct,
   onSelectProduct,
   onQuickView,
   onNavigateShop,
   onNavigateHome,
   onBuyNow,
 }) => {
-  // Related products from same category or same subcategory, excluding current product
-  const relatedProducts = PRODUCTS.filter(
-    (p) => p.category === product.category && p.id !== product.id
-  ).slice(0, 4);
+  const [product, setProduct] = useState<Product>(initialProduct);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>(() => {
+    return PRODUCTS.filter((p) => p.category === initialProduct.category && p.id !== initialProduct.id).slice(0, 4);
+  });
+  const [isLoadingRelated, setIsLoadingRelated] = useState(false);
 
-  // If fewer than 4 in same category, pad with other products
-  const finalRelated = relatedProducts.length >= 4
-    ? relatedProducts
-    : [
-        ...relatedProducts,
-        ...PRODUCTS.filter((p) => p.id !== product.id && !relatedProducts.some((r) => r.id === p.id)).slice(0, 4 - relatedProducts.length)
-      ];
+  useEffect(() => {
+    setProduct(initialProduct);
+
+    let isMounted = true;
+    setIsLoadingRelated(true);
+
+    // Fetch live product details & related products from API
+    Promise.all([
+      fetchProductBySlug(initialProduct.slug || initialProduct.id).catch(() => null),
+      fetchRelatedProducts(initialProduct.id).catch(() => []),
+    ])
+      .then(([liveProduct, liveRelated]) => {
+        if (!isMounted) return;
+        if (liveProduct) {
+          setProduct(liveProduct);
+        }
+        if (liveRelated && liveRelated.length > 0) {
+          setRelatedProducts(liveRelated);
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingRelated(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [initialProduct]);
 
   return (
     <div className="container" style={{ paddingBottom: '80px' }}>
@@ -148,7 +171,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         </div>
 
         <ProductGrid
-          products={finalRelated}
+          products={relatedProducts}
           onSelectProduct={onSelectProduct}
           onQuickView={onQuickView}
         />

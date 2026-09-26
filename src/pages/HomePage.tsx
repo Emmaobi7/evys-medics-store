@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, CheckCircle2, Microscope, Stethoscope, Zap, Package, ShoppingBag } from 'lucide-react';
 import { CATEGORIES } from '../data/categories';
 import { PRODUCTS } from '../data/products';
+import { fetchProducts } from '../api/client';
 import { CategoryGrid } from '../components/CategoryGrid';
 import { ProductGrid } from '../components/ProductGrid';
 import { TrustSection } from '../components/TrustSection';
@@ -21,8 +22,26 @@ export const HomePage: React.FC<HomePageProps> = ({
   onQuickView,
   onOpenQuickOrder,
 }) => {
-  const featuredProducts = PRODUCTS.filter((p) => p.isFeatured);
-  const promoEssentials = PRODUCTS.filter((p) => p.isPromoEssential);
+  const [productsList, setProductsList] = useState<Product[]>(PRODUCTS);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchProducts({ limit: 20 })
+      .then((res) => {
+        if (isMounted && res.items && res.items.length > 0) {
+          setProductsList(res.items);
+        }
+      })
+      .catch((err) => {
+        console.warn('[HomePage] API fetch fallback to cached catalog:', err.message);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const featuredProducts = productsList.filter((p) => p.isFeatured || p.rating >= 4.8).slice(0, 4);
+  const promoEssentials = productsList.filter((p) => p.isPromoEssential || p.inStock).slice(0, 4);
 
   return (
     <div>

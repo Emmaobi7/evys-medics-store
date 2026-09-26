@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { SlidersHorizontal, Search, RotateCcw, X, ChevronRight, Check } from 'lucide-react';
 import { PRODUCTS } from '../data/products';
 import { CATEGORIES, MEGA_MENU_CATEGORIES } from '../data/categories';
+import { fetchProducts } from '../api/client';
 import { ProductGrid } from '../components/ProductGrid';
 import { Button } from '../components/Button';
 import { Product, FilterState } from '../types';
@@ -40,79 +41,82 @@ export const ShopPage: React.FC<ShopPageProps> = ({
     badgeFilter: initialBadge,
   });
 
+  const [productsList, setProductsList] = useState<Product[]>(PRODUCTS);
+  const [isLoading, setIsLoading] = useState(false);
   const [visibleCount, setVisibleCount] = useState(12);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
-  // Available brands in mock data
+  // Live API Fetch for Products
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
+
+    fetchProducts({
+      category: filters.category,
+      subcategory: filters.subcategory,
+      brand: filters.brand,
+      productType: filters.productType,
+      minPrice: filters.minPrice,
+      maxPrice: filters.maxPrice,
+      inStockOnly: filters.inStockOnly,
+      sortBy: filters.sortBy,
+      searchQuery: filters.searchQuery,
+      limit: 50,
+    })
+      .then((res) => {
+        if (isMounted && res.items) {
+          setProductsList(res.items);
+        }
+      })
+      .catch((err) => {
+        console.warn('[ShopPage] API error, falling back to cached catalog:', err.message);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    filters.category,
+    filters.subcategory,
+    filters.brand,
+    filters.productType,
+    filters.minPrice,
+    filters.maxPrice,
+    filters.inStockOnly,
+    filters.sortBy,
+    filters.searchQuery,
+  ]);
+
+  // Available brands in data
   const availableBrands = useMemo(() => {
-    const brands = PRODUCTS
+    const brands = productsList
       .filter((p) => filters.category === 'all' || p.category === filters.category)
       .map((p) => p.brand)
       .filter((b): b is string => Boolean(b));
     return Array.from(new Set(brands));
-  }, [filters.category]);
+  }, [filters.category, productsList]);
 
   // Available product types based on current category selection
   const availableProductTypes = useMemo(() => {
-    const list = PRODUCTS
+    const list = productsList
       .filter((p) => filters.category === 'all' || p.category === filters.category)
       .map((p) => p.productType)
       .filter((t): t is string => Boolean(t));
     return Array.from(new Set(list));
-  }, [filters.category]);
+  }, [filters.category, productsList]);
 
-  // Filter & Sort Products
+  // Filter & Sort Products (Client-side fallback/refinement)
   const filteredProducts = useMemo(() => {
-    return PRODUCTS.filter((product) => {
-      // Category filter
-      if (filters.category !== 'all' && product.category !== filters.category) {
-        return false;
-      }
-      // Subcategory filter
-      if (filters.subcategory !== 'all' && product.subcategory !== filters.subcategory) {
-        return false;
-      }
-      // Product type filter
-      if (filters.productType !== 'all' && product.productType !== filters.productType) {
-        return false;
-      }
-      // Brand filter
-      if (filters.brand !== 'all' && product.brand !== filters.brand) {
-        return false;
-      }
-      // Badge filter
+    return productsList.filter((product) => {
       if (filters.badgeFilter && product.badge !== filters.badgeFilter) {
         return false;
       }
-      // In stock filter
-      if (filters.inStockOnly && !product.inStock) {
-        return false;
-      }
-      // Price range
-      if (product.price < filters.minPrice || product.price > filters.maxPrice) {
-        return false;
-      }
-      // Search query
-      if (filters.searchQuery.trim() !== '') {
-        const q = filters.searchQuery.toLowerCase();
-        const match =
-          product.name.toLowerCase().includes(q) ||
-          product.sku.toLowerCase().includes(q) ||
-          product.brand.toLowerCase().includes(q) ||
-          product.categoryName.toLowerCase().includes(q) ||
-          (product.subcategoryName && product.subcategoryName.toLowerCase().includes(q)) ||
-          product.shortDescription.toLowerCase().includes(q);
-        if (!match) return false;
-      }
       return true;
-    }).sort((a, b) => {
-      if (filters.sortBy === 'price-asc') return a.price - b.price;
-      if (filters.sortBy === 'price-desc') return b.price - a.price;
-      if (filters.sortBy === 'name-asc') return a.name.localeCompare(b.name);
-      // 'relevance' (featured first)
-      return (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0);
     });
-  }, [filters]);
+  }, [productsList, filters.badgeFilter]);
 
   const displayedProducts = filteredProducts.slice(0, visibleCount);
   const hasMore = visibleCount < filteredProducts.length;
@@ -638,6 +642,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
             <>
               <ProductGrid
                 products={displayedProducts}
+                isLoading={isLoading}
                 onSelectProduct={onSelectProduct}
                 onQuickView={onQuickView}
               />

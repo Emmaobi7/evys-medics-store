@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useId } from 'react';
 import { Search, X, ArrowRight, Layers, CornerDownLeft } from 'lucide-react';
 import { PRODUCTS } from '../data/products';
 import { CATEGORIES } from '../data/categories';
+import { fetchSearchSuggestions } from '../api/client';
 import { Product } from '../types';
 
 interface SearchBarProps {
@@ -18,34 +19,68 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [matchingProducts, setMatchingProducts] = useState<Product[]>([]);
+  const [matchingCategories, setMatchingCategories] = useState<Array<{ id: string; name: string; slug: string; isSubcategory: boolean }>>([]);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listboxId = useId();
 
-  // Search filter matching products across name, sku, category, subcategory, brand, and keywords
-  const matchingProducts = React.useMemo(() => {
-    if (!query.trim()) return [];
-    const q = query.toLowerCase().trim();
-    return PRODUCTS.filter((p) => {
-      const nameMatch = p.name.toLowerCase().includes(q);
-      const skuMatch = p.sku.toLowerCase().includes(q);
-      const catMatch = p.categoryName.toLowerCase().includes(q);
-      const subMatch = p.subcategoryName ? p.subcategoryName.toLowerCase().includes(q) : false;
-      const brandMatch = p.brand ? p.brand.toLowerCase().includes(q) : false;
-      const descMatch = p.shortDescription ? p.shortDescription.toLowerCase().includes(q) : false;
-      return nameMatch || skuMatch || catMatch || subMatch || brandMatch || descMatch;
-    }).slice(0, 6);
-  }, [query]);
+  // Live debounced backend search query
+  useEffect(() => {
+    if (!query.trim()) {
+      setMatchingProducts([]);
+      setMatchingCategories([]);
+      return;
+    }
 
-  // Matching departments / categories
-  const matchingCategories = React.useMemo(() => {
-    if (!query.trim()) return [];
-    const q = query.toLowerCase().trim();
-    return CATEGORIES.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        c.subcategories?.some((s) => s.name.toLowerCase().includes(q))
-    );
+    const timer = setTimeout(() => {
+      fetchSearchSuggestions(query.trim())
+        .then((res) => {
+          const mapped = res.products.map((p) => {
+            const fallback = PRODUCTS.find((prod) => prod.id === p.id || prod.sku === p.sku);
+            return (
+              fallback || {
+                id: p.id,
+                sku: p.sku,
+                name: p.name,
+                slug: p.slug,
+                category: 'medical-equipment' as const,
+                categoryName: p.categoryName,
+                price: p.price,
+                shortDescription: p.shortDescription,
+                description: [p.shortDescription],
+                features: [],
+                specifications: [],
+                images: p.imageUrl ? [p.imageUrl] : [],
+                inStock: true,
+                stockCount: 10,
+                leadTime: 'Standard Courier Dispatch',
+                brand: 'EVYS Medical',
+                rating: 5,
+                reviewCount: 1,
+              }
+            );
+          });
+          setMatchingProducts(mapped);
+          setMatchingCategories(res.categories);
+        })
+        .catch(() => {
+          // Fallback to local filter if API is offline
+          const q = query.toLowerCase().trim();
+          const localProds = PRODUCTS.filter((p) => {
+            const nameMatch = p.name.toLowerCase().includes(q);
+            const skuMatch = p.sku.toLowerCase().includes(q);
+            const catMatch = p.categoryName.toLowerCase().includes(q);
+            const subMatch = p.subcategoryName ? p.subcategoryName.toLowerCase().includes(q) : false;
+            const brandMatch = p.brand ? p.brand.toLowerCase().includes(q) : false;
+            const descMatch = p.shortDescription ? p.shortDescription.toLowerCase().includes(q) : false;
+            return nameMatch || skuMatch || catMatch || subMatch || brandMatch || descMatch;
+          }).slice(0, 6);
+          setMatchingProducts(localProds);
+        });
+    }, 150);
+
+    return () => clearTimeout(timer);
   }, [query]);
 
   // Handle outside click to close suggestions

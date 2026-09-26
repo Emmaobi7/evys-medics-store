@@ -1,0 +1,378 @@
+Yep. **That’s clean.** 10/10 auth tests passing, admin routes protected, forged JWT rejected, and secrets separated from the codebase.
+
+So we can move to the next phase:
+
+**🔌 Connect the existing EVYS frontend to the real API.**
+
+The important thing is we should do this **incrementally**, not let Antigravity rip out the existing frontend architecture.
+
+I’d start with **catalogue + product detail + search**, then cart/order after we verify those.
+
+Paste this:
+
+We are continuing the existing EVYS Medical project.
+
+The backend authentication/security pass is COMPLETE and tested.
+
+Do NOT rebuild the frontend.
+Do NOT redesign the UI.
+Do NOT replace the existing frontend architecture.
+Do NOT implement Stripe/payment yet.
+Do NOT build the admin dashboard yet.
+
+## CURRENT STATE
+
+The existing frontend is already built and polished.
+
+The backend now includes:
+
+* Express + TypeScript
+* PostgreSQL/Neon
+* Zod validation
+* products/categories
+* inventory
+* product images/specifications/features
+* catalogue API
+* search/suggestions
+* SKU quick lookup
+* cart validation
+* transactional order creation
+* stock deduction
+* immutable order snapshots
+* admin endpoints
+* JWT authentication
+* admin authorization
+* development seed data
+
+Authentication has passed 10/10 automated security tests.
+
+The backend documentation is in BACKEND.md.
+
+## NEXT TASK
+
+Connect the EXISTING customer-facing frontend to the real backend API.
+
+This is an integration pass.
+
+The existing frontend currently uses local/mock/seed data in places. Replace those data sources progressively with API calls while preserving the existing UI and UX.
+
+---
+
+# STEP 1 — INSPECT BEFORE MODIFYING
+
+First inspect the frontend thoroughly.
+
+Identify:
+
+* current product data source
+* product/category types
+* ShopPage
+* product detail page
+* SearchBar
+* QuickOrderModal
+* CartContext
+* checkout flow
+* API utilities already present
+* environment configuration
+* loading states
+* empty states
+* error states
+
+Do not start editing immediately.
+
+Understand the current architecture first.
+
+---
+
+# STEP 2 — CREATE A CLEAN API CLIENT
+
+Create or extend a centralized frontend API client.
+
+Do NOT scatter raw `fetch()` calls throughout components.
+
+Use a structure appropriate to the existing project, for example:
+
+src/lib/api/
+src/services/
+src/api/
+
+but follow the existing project conventions if one already exists.
+
+The API client should handle:
+
+* base URL
+* JSON requests/responses
+* common error handling
+* query parameters
+* request headers
+
+The backend URL must come from an environment variable.
+
+Do not hardcode localhost or production URLs into components.
+
+For example, use the project's appropriate environment convention:
+
+VITE_API_URL=...
+
+if this is a Vite frontend.
+
+---
+
+# STEP 3 — CONNECT PRODUCT CATALOGUE
+
+Replace the frontend's mock catalogue source with the backend catalogue API.
+
+Preserve the existing visual design exactly.
+
+The Shop page should retrieve real products from the API.
+
+Support whatever filters/pagination the backend already exposes.
+
+Do not invent new backend endpoints unless absolutely necessary.
+
+Map the backend response into the existing frontend product model through a single adapter/mapper where appropriate.
+
+Do not force backend database models directly into every UI component.
+
+---
+
+# STEP 4 — PRODUCT DETAILS
+
+Connect the existing product detail page to the real product API.
+
+Verify:
+
+* product information
+* images
+* specifications
+* features
+* SKU
+* price
+* stock/availability
+* category information
+
+Existing product-detail UI must remain intact.
+
+Handle:
+
+* loading
+* product not found
+* API failure
+
+with polished existing-style states.
+
+Do not leave blank screens.
+
+---
+
+# STEP 5 — SEARCH
+
+Connect the existing SearchBar to the backend search/suggestion endpoint.
+
+Preserve:
+
+* current search UI
+* debounce behavior if already implemented
+* keyboard interactions
+* dropdown styling
+* navigation behavior
+
+Do not make a request on every keystroke if the existing design already supports debouncing.
+
+Use the backend search functionality rather than filtering a giant local product array in the browser.
+
+---
+
+# STEP 6 — QUICK ORDER / SKU LOOKUP
+
+Connect the existing Quick Order functionality to the backend SKU lookup endpoint.
+
+Flow should become:
+
+SKU entered
+↓
+API lookup
+↓
+real product returned
+↓
+existing Quick Order UI displays product
+↓
+user selects quantity
+↓
+existing cart mechanism
+
+Do not redesign Quick Order.
+
+Handle invalid/nonexistent SKUs gracefully.
+
+---
+
+# STEP 7 — CATEGORIES
+
+Where the frontend currently relies on hardcoded categories, connect it to the backend category API if one already exists.
+
+Keep the existing navigation/mega-menu appearance.
+
+Do not change the visual hierarchy.
+
+---
+
+# STEP 8 — CART
+
+Do NOT completely rewrite CartContext.
+
+First inspect the current implementation.
+
+The frontend cart can remain client-side for the moment if that is how the current architecture works.
+
+However:
+
+* cart items must reference real backend product IDs/SKUs
+* quantities must be validated against backend data before creating an order
+* do not trust frontend prices
+* do not trust frontend stock quantities
+
+The backend remains the source of truth.
+
+---
+
+# STEP 9 — API ERROR HANDLING
+
+Create a consistent API error handling strategy.
+
+Handle at minimum:
+
+* 400 validation errors
+* 401 authentication errors
+* 403 authorization errors
+* 404 not found
+* 409 conflicts/stock issues
+* 500 server errors
+* network failures
+
+Customer-facing errors should be understandable.
+
+Do not expose raw stack traces, SQL errors, or internal server details.
+
+---
+
+# STEP 10 — LOADING / EMPTY STATES
+
+Do not simply replace mock data with:
+
+"Loading..."
+
+Every major API-driven view should have an appropriate loading state that matches the existing EVYS visual language.
+
+Also handle:
+
+* empty catalogue
+* no search results
+* unavailable product
+* temporarily unavailable API
+
+without breaking the page.
+
+---
+
+# STEP 11 — ENVIRONMENT
+
+Make sure development configuration is clean.
+
+Frontend:
+
+VITE_API_URL=<backend URL>
+
+or the equivalent environment mechanism already used by the project.
+
+Do not commit secrets.
+
+Do not place DATABASE_URL or JWT_SECRET in the frontend.
+
+The frontend must NEVER receive:
+
+* DATABASE_URL
+* database password
+* JWT_SECRET
+* ADMIN_PASSWORD
+* any server-only secret
+
+---
+
+# STEP 12 — DO NOT CONNECT ADMIN YET
+
+Do not build or connect an admin dashboard in this pass.
+
+Do not expose admin credentials in the frontend.
+
+Customer-facing API integration only.
+
+---
+
+# STEP 13 — TEST THE REAL FLOW
+
+After implementation, run the frontend and backend together.
+
+Test:
+
+1. Shop opens and retrieves products from API.
+2. Product detail retrieves the correct product.
+3. Search retrieves backend results.
+4. SKU Quick Order retrieves the correct product.
+5. Category navigation works.
+6. Product images/specifications/features render correctly.
+7. API failure produces a graceful UI.
+8. Empty results work correctly.
+9. Cart can contain real backend products.
+10. Refreshing the page does not create inconsistent product data.
+11. No server secrets appear in frontend source/build.
+12. Browser console has no avoidable API errors.
+
+Use the browser/network tools available in the environment if appropriate.
+
+---
+
+# IMPORTANT
+
+Do not make unrelated changes.
+
+Do not:
+
+* redesign the site
+* change the branding
+* rewrite components unnecessarily
+* introduce Redux/Zustand/etc. just because
+* install large dependencies without justification
+* add Stripe
+* add payment processing
+* build the admin dashboard
+* implement customer authentication yet
+
+Keep the current EVYS UI intact.
+
+The goal of this pass is:
+
+EXISTING EVYS UI
+↓
+CENTRAL API CLIENT
+↓
+REAL EXPRESS API
+↓
+POSTGRESQL / NEON
+
+At the end, report:
+
+* files changed
+* API endpoints connected
+* components updated
+* dependencies added, if any
+* tests performed
+* any remaining issues
+
+If you encounter an API contract mismatch, STOP and inspect the backend implementation/documentation before inventing a workaround.
+
+Do not finish by merely saying "implemented."
+
+Actually run the application and verify the integration.
+
+STOP after customer-facing catalogue/search/product/Quick Order integration is working.

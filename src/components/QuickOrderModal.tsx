@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { X, Search, Zap, Check, Plus, AlertCircle, ShoppingBag, ArrowRight, Trash2, ArrowLeft, Layers } from 'lucide-react';
 import { PRODUCTS } from '../data/products';
+import { lookupQuickOrder } from '../api/client';
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
@@ -38,6 +39,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
   const [singleQuantity, setSingleQuantity] = useState(1);
   const [isSearched, setIsSearched] = useState(false);
   const [isInvalidSku, setIsInvalidSku] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [lastAddedProduct, setLastAddedProduct] = useState<{ product: Product; quantity: number } | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -70,26 +72,53 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Single SKU lookup logic
+  // Single SKU lookup logic with live backend API
   const handleFindProduct = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!singleSku.trim()) return;
 
-    const trimmed = singleSku.trim().toLowerCase();
-    const found = PRODUCTS.find(
-      (p) => p.sku.toLowerCase() === trimmed || p.name.toLowerCase() === trimmed
-    );
+    setIsSearching(true);
+    const trimmed = singleSku.trim();
 
-    setIsSearched(true);
-    setShowSuggestions(false);
-
-    if (found) {
-      setSelectedProduct(found);
-      setIsInvalidSku(false);
-    } else {
-      setSelectedProduct(null);
-      setIsInvalidSku(true);
-    }
+    lookupQuickOrder([{ sku: trimmed, quantity: singleQuantity }])
+      .then((res) => {
+        setIsSearched(true);
+        setShowSuggestions(false);
+        if (res.resolved && res.resolved.length > 0) {
+          setSelectedProduct(res.resolved[0].product);
+          setIsInvalidSku(false);
+        } else {
+          // Fallback to local
+          const found = PRODUCTS.find(
+            (p) => p.sku.toLowerCase() === trimmed.toLowerCase() || p.name.toLowerCase() === trimmed.toLowerCase()
+          );
+          if (found) {
+            setSelectedProduct(found);
+            setIsInvalidSku(false);
+          } else {
+            setSelectedProduct(null);
+            setIsInvalidSku(true);
+          }
+        }
+      })
+      .catch(() => {
+        // Fallback to local
+        const found = PRODUCTS.find(
+          (p) => p.sku.toLowerCase() === trimmed.toLowerCase() || p.name.toLowerCase() === trimmed.toLowerCase()
+        );
+        setIsSearched(true);
+        setShowSuggestions(false);
+        if (found) {
+          setSelectedProduct(found);
+          setIsInvalidSku(false);
+        } else {
+          setSelectedProduct(null);
+          setIsInvalidSku(true);
+        }
+      })
+      .finally(() => {
+        setIsSearching(false);
+      });
   };
 
   const handleSelectSuggestedProduct = (product: Product) => {
@@ -141,6 +170,21 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
         return row;
       })
     );
+
+    if (value.trim().length >= 3) {
+      lookupQuickOrder([{ sku: value.trim(), quantity: 1 }])
+        .then((res) => {
+          if (res.resolved && res.resolved.length > 0) {
+            const apiProd = res.resolved[0].product;
+            setMultiRows((prev) =>
+              prev.map((row) =>
+                row.id === rowId ? { ...row, product: apiProd, isInvalid: false } : row
+              )
+            );
+          }
+        })
+        .catch(() => {});
+    }
   };
 
   const handleMultiQuantityChange = (rowId: string, qty: number) => {
