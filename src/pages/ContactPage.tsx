@@ -238,9 +238,9 @@ export const ContactPage: React.FC<ContactPageProps> = ({
                   <Mail size={20} />
                 </div>
                 <div>
-                  <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-muted)' }}>Official Procurement Email</div>
-                  <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-ink)' }}>orders@evysprojects.com</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>2-hour guaranteed triage</div>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-muted)' }}>Direct Procurement Support</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-ink)' }}>Online Inquiry &amp; Dispatch</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>Submit orders and requests via the contact form</div>
                 </div>
               </div>
 

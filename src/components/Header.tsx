@@ -588,18 +588,20 @@ export const Header: React.FC<HeaderProps> = ({
                 }}
               >
                 <div style={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-muted)' }}>
-                  Practice Support &amp; Order Line
+                  Practice Support &amp; Order Inquiries
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
-                  <span style={{ color: 'var(--color-muted)' }}>Freephone:</span>
-                  <a href="tel:08004567890" style={{ fontWeight: 700, color: 'var(--color-primary)' }}>
-                    0800 456 7890
-                  </a>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
-                  <span style={{ color: 'var(--color-muted)' }}>Official Email:</span>
-                  <a href="mailto:orders@evysprojects.com" style={{ fontWeight: 600, color: 'var(--color-ink)' }}>
-                    orders@evysprojects.com
+                  <span style={{ color: 'var(--color-muted)' }}>Support Channel:</span>
+                  <a
+                    href="#contact"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsMobileMenuOpen(false);
+                      onNavigate('contact');
+                    }}
+                    style={{ fontWeight: 600, color: 'var(--color-primary)' }}
+                  >
+                    Contact Support &amp; Inquiries
                   </a>
                 </div>
               </div>

@@ -1,0 +1,193 @@
+Broski, the rebrand is mostly complete. Before we move into payment/currency implementation, do one final focused verification and cleanup pass.
+
+IMPORTANT: Do NOT implement payments, currency conversion, VAT changes, checkout redesign, or any gateway integration in this task.
+
+## 1. Fix unconfirmed production contact details
+
+The previous pass introduced:
+
+* [orders@evysprojects.com](mailto:orders@evysprojects.com)
+* [support@evysprojects.com](mailto:support@evysprojects.com)
+
+These have NOT yet been confirmed by the client as official production emails.
+
+Search the entire repository for these addresses.
+
+Replace them with a neutral placeholder/contact mechanism that clearly does not claim they are official production addresses.
+
+Do NOT invent another domain or email address.
+
+For example, customer-facing copy can use:
+
+* "Contact us for orders and support"
+* "Contact details coming soon"
+* or another appropriate neutral CTA.
+
+Do not expose an unconfirmed email address anywhere in the customer-facing UI, metadata, API responses, or seeded customer-facing content.
+
+## 2. Verify the brand
+
+Search the entire repository for:
+
+* EVYS Medical
+* Evys Medical
+* EVYS
+* Evys
+* evysmedics
+* mazi_medics
+* evysprojects.com
+
+Classify every remaining occurrence as:
+
+A. Customer-facing → must be changed
+B. Internal technical identifier → may remain
+C. Test/dev fixture → may remain if necessary
+D. Requires client information → leave neutral and report it
+
+The customer-facing brand must consistently be:
+
+"Evy's Projects"
+
+or, where natural:
+
+"Evy's"
+
+Preserve the apostrophe.
+
+Do NOT rename technical database schemas, Git remotes, migrations, storage keys, or other internal identifiers just for cosmetic consistency.
+
+## 3. Verify Nigerian-neutral business positioning
+
+Search for remaining UK-specific customer-facing claims, including:
+
+* UK
+* London
+* Harley Street
+* NHS
+* British
+* GBP
+* £
+* VAT
+* UK plug
+* UK delivery
+* UK mainland
+* UK-wide
+* .co.uk
+
+Do not automatically modify every technical/internal occurrence.
+
+For each customer-facing occurrence:
+
+* remove the unsupported UK claim
+* replace with neutral wording where appropriate
+* do NOT invent Nigerian addresses, phone numbers, registration numbers, tax IDs, delivery promises, or business claims.
+
+Important:
+
+Do NOT change £ to ₦ yet.
+
+Do NOT change the 20% VAT logic yet.
+
+Do NOT choose a Nigerian tax treatment.
+
+Do NOT assume a payment provider.
+
+Those decisions require client confirmation.
+
+## 4. Inspect seeded product branding
+
+The current seed data contains names such as:
+
+* Evy's Clinical
+* Evy's Diagnostics
+* Evy's Laboratory
+* Evy's Consumables
+* Evy's Apparel
+
+These appear to be placeholder catalogue brands rather than confirmed manufacturer brands.
+
+Do NOT invent real manufacturers.
+
+Keep the current seed data functional for development, but make sure the UI does not misleadingly imply these are established external manufacturers if they are only development data.
+
+If there is already a clear development/placeholder mechanism, use it.
+
+Do not redesign the catalogue in this task.
+
+## 5. Check contact/about/legal copy
+
+Review:
+
+* Contact page
+* About page
+* Footer
+* Header
+* Checkout
+* Account modal
+* Order confirmation
+* Error states
+* SEO metadata
+* API health/error messages
+
+Make sure none of them claim:
+
+* a UK headquarters
+* London location
+* NHS approval/relationship
+* UK registration
+* UK delivery guarantees
+* confirmed Nigerian registration
+* confirmed Nigerian physical address
+* confirmed Nigerian phone number
+* confirmed production email
+
+Only state facts we actually know.
+
+## 6. Run final verification
+
+Run:
+
+npx tsc -p tsconfig.server.json --noEmit
+
+npx tsc --noEmit
+
+npm run test:all
+
+npm run build
+
+Then perform a final repository search for the old customer-facing brand and UK claims.
+
+Report:
+
+* remaining EVYS occurrences
+* remaining UK occurrences
+* remaining .co.uk occurrences
+* remaining £ occurrences
+* remaining VAT occurrences
+* remaining old contact emails
+* which ones are intentionally retained and why
+
+## 7. STOP HERE
+
+Do NOT:
+
+* integrate Paystack
+* integrate Flutterwave
+* integrate Monnify
+* add Stripe
+* implement webhooks
+* change currency
+* change VAT
+* redesign checkout
+* add production payment credentials
+* invent business/legal information
+* migrate the database schema
+* rename the Git repository
+
+This task is ONLY the final brand/business-context cleanup and verification.
+
+If everything passes, commit the changes with:
+
+feat(rebrand): finalize Evy's Projects identity cleanup
+
+Do not begin the payment phase until this task is complete.

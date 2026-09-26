@@ -19,7 +19,7 @@ export const AnnouncementBar: React.FC = () => {
           <span className="announcement-bullet">•</span>
           <span className="announcement-item">
             <PhoneCall size={13} strokeWidth={2.5} style={{ color: 'var(--color-accent)' }} />
-            <span>Practice Support: 0800 456 7890</span>
+            <span>Direct Clinical &amp; Procurement Support</span>
           </span>
         </div>
 
@@ -30,10 +30,10 @@ export const AnnouncementBar: React.FC = () => {
             <span>Free Delivery &gt; £50</span>
           </span>
           <span className="announcement-bullet">•</span>
-          <a href="tel:08004567890" className="announcement-item" style={{ color: 'inherit', textDecoration: 'none' }}>
+          <span className="announcement-item">
             <PhoneCall size={12} strokeWidth={2.5} style={{ color: 'var(--color-accent)' }} />
-            <span>0800 456 7890</span>
-          </a>
+            <span>Procurement &amp; Inquiries</span>
+          </span>
         </div>
       </div>
     </div>

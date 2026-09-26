@@ -39,12 +39,14 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8125rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#CBD5E1' }}>
-                <Phone size={15} style={{ color: 'var(--color-accent)' }} />
-                <span>Customer Support: 0800 456 7890</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#CBD5E1' }}>
                 <Mail size={15} style={{ color: 'var(--color-accent)' }} />
-                <span>support@evysprojects.com</span>
+                <a
+                  href="#contact"
+                  onClick={(e) => { e.preventDefault(); onNavigate('contact'); }}
+                  style={{ color: '#CBD5E1', textDecoration: 'none' }}
+                >
+                  Contact us for orders &amp; support
+                </a>
               </div>
             </div>
           </div>

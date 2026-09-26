@@ -218,7 +218,7 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
                   <input
                     type="tel"
                     required
-                    placeholder="0800 456 7890"
+                    placeholder="e.g. +234 ... / Telephone"
                     value={shippingDetails.phone}
                     onChange={(e) => setShippingDetails({ ...shippingDetails, phone: e.target.value })}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}

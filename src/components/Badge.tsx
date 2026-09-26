@@ -2,7 +2,7 @@ import React from 'react';
 import { Award, Flame, Sparkles, Check } from 'lucide-react';
 
 interface BadgeProps {
-  type?: 'Bestseller' | 'Popular' | 'New' | 'ISO Certified' | 'Standard' | 'NHS Approved' | 'CE Marked';
+  type?: 'Bestseller' | 'Popular' | 'New' | 'ISO Certified' | 'Standard' | 'CE Marked';
   className?: string;
 }
 
