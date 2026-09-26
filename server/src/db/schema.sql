@@ -112,6 +112,16 @@ CREATE TABLE IF NOT EXISTS order_items (
   line_total_ex_vat NUMERIC(10, 2) NOT NULL CHECK (line_total_ex_vat >= 0)
 );
 
+-- 9. Users Table (Admin & Customer Authentication)
+CREATE TABLE IF NOT EXISTS users (
+  id VARCHAR(64) PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  role VARCHAR(32) NOT NULL DEFAULT 'CUSTOMER', -- 'ADMIN', 'CUSTOMER'
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Indexes for Fast Querying & Filtering
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_subcategory ON products(subcategory_id);
@@ -128,3 +138,5 @@ CREATE INDEX IF NOT EXISTS idx_categories_slug ON categories(slug);
 CREATE INDEX IF NOT EXISTS idx_orders_number ON orders(order_number);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);

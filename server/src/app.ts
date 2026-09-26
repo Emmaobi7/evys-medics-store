@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { config } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
+import { authRouter } from './routes/auth';
 import { categoriesRouter } from './routes/categories';
 import { productsRouter } from './routes/products';
 import { searchRouter } from './routes/search';
@@ -44,6 +45,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // API v1 Routes
+app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/categories', categoriesRouter);
 app.use('/api/v1/products', productsRouter);
 app.use('/api/v1/search', searchRouter);

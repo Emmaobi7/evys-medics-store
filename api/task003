@@ -1,0 +1,279 @@
+We are continuing the existing EVYS Medical project.
+
+IMPORTANT:
+Do NOT rebuild the frontend.
+Do NOT redesign anything.
+Do NOT replace the existing backend architecture.
+Do NOT start Stripe/payment integration yet.
+
+The frontend and basic Express + TypeScript + PostgreSQL/Neon backend already exist and have been implemented/tested.
+
+Our next task is to add a proper authentication and authorization layer to the backend before connecting the frontend to the API.
+
+## Current backend
+
+The backend already has:
+
+* Express + TypeScript
+* Neon PostgreSQL
+* Zod validation
+* normalized product/category schema
+* inventory
+* product images/specifications/features
+* product catalogue APIs
+* search/suggestions
+* SKU quick lookup
+* cart validation
+* transactional order creation
+* stock deduction
+* immutable order snapshots
+* basic admin endpoints
+* development seed data
+
+Existing admin routes include routes similar to:
+
+POST   /api/v1/admin/products
+PATCH  /api/v1/admin/products/:id/stock
+PATCH  /api/v1/admin/products/:id/price
+GET    /api/v1/admin/orders
+PATCH  /api/v1/admin/orders/:id/status
+
+These routes must NOT remain publicly accessible.
+
+## TASK
+
+Implement backend authentication and authorization cleanly and securely.
+
+First, inspect the existing project structure and database schema before making changes.
+
+Do not duplicate existing utilities or introduce unnecessary dependencies.
+
+### 1. Authentication design
+
+Implement a simple production-appropriate authentication system for the EVYS admin.
+
+Use:
+
+* email + password login
+* securely hashed passwords
+* JWT access authentication OR the existing authentication approach if one already exists in the project
+* secure password verification
+* environment variables for secrets
+* appropriate token expiration
+* no passwords stored in plaintext
+
+Do NOT hardcode secrets.
+
+Add/update `.env.example` with the required variables, but never place real credentials in it.
+
+### 2. Admin authorization
+
+Create middleware that verifies authentication and authorization.
+
+For example:
+
+requireAuth
+requireAdmin
+
+All `/api/v1/admin/*` routes must require authenticated admin access.
+
+A normal customer/user must not be able to access admin routes.
+
+Do not rely on the frontend hiding buttons as a security mechanism.
+
+Authorization must happen server-side.
+
+### 3. Admin user model
+
+If the current schema does not already contain an appropriate admin/user model, add one using the existing database migration approach.
+
+Keep it minimal.
+
+Something along the lines of:
+
+users
+
+* id
+* email
+* password_hash
+* role
+* created_at
+* updated_at
+
+Roles should be explicit, e.g.:
+
+ADMIN
+CUSTOMER
+
+Use the project's existing naming conventions if they differ.
+
+Do not create an unnecessarily complicated RBAC system yet.
+
+### 4. Login endpoint
+
+Implement something like:
+
+POST /api/v1/auth/login
+
+Request:
+
+{
+"email": "...",
+"password": "..."
+}
+
+Return an appropriate authenticated response.
+
+Do not return:
+
+* password
+* password_hash
+* sensitive internal fields
+
+Handle invalid credentials safely without leaking whether an email exists.
+
+### 5. Current-user endpoint
+
+Implement something like:
+
+GET /api/v1/auth/me
+
+It should return the authenticated user's safe public/auth identity information.
+
+Example:
+
+{
+"id": "...",
+"email": "...",
+"role": "ADMIN"
+}
+
+### 6. Protect admin routes
+
+Apply the authentication/authorization middleware to every existing admin endpoint.
+
+Verify that an unauthenticated request receives an appropriate 401 response.
+
+Verify that an authenticated non-admin receives an appropriate 403 response.
+
+Verify that an authenticated admin can access the admin endpoints.
+
+### 7. Security
+
+Follow normal backend security practices:
+
+* password hashing with a reputable password hashing library
+* never log passwords
+* never log JWT secrets
+* never return password hashes
+* validate login input with Zod
+* validate environment configuration
+* avoid leaking database errors to clients
+* use appropriate HTTP status codes
+* prevent obvious authentication bypasses
+* keep secrets in environment variables
+* do not expose the Neon connection string
+
+If CORS or security middleware already exists, inspect and improve it rather than creating duplicates.
+
+### 8. Seed/development admin
+
+Create a development-only admin seed mechanism if the project does not already have one.
+
+Use environment variables for the development admin credentials rather than hardcoding a real password.
+
+For example:
+
+ADMIN_EMAIL=
+ADMIN_PASSWORD=
+
+Make it obvious that this is for development/bootstrap purposes.
+
+Do not use an obvious production password.
+
+### 9. Tests
+
+Add backend tests for at least:
+
+1. Login with valid credentials → success
+2. Login with invalid password → 401
+3. Login with unknown email → 401
+4. `/auth/me` without token → 401
+5. `/auth/me` with valid admin token → success
+6. Admin endpoint without token → 401
+7. Admin endpoint with non-admin token → 403
+8. Admin endpoint with valid admin token → success
+
+Also verify that protected endpoints cannot be bypassed by manipulating request headers or user-supplied role fields.
+
+### 10. Database/migrations
+
+Use the existing migration system and conventions.
+
+Do not manually modify the production database from application startup.
+
+Do not destroy existing data.
+
+Do not recreate the database.
+
+Do not modify the existing product/order/inventory architecture unless authentication genuinely requires a small schema change.
+
+### 11. Documentation
+
+Update the backend README/API documentation with:
+
+* required environment variables
+* how to create/seed a development admin
+* login endpoint
+* authentication flow
+* protected admin endpoints
+* how to run authentication tests
+
+### 12. IMPORTANT SECURITY CHECK
+
+Before finishing, inspect the entire backend for existing admin routes.
+
+Search the codebase for:
+
+* `/admin`
+* `admin`
+* price update
+* stock update
+* order status
+* product creation/deletion/update
+
+Make sure every privileged operation is protected.
+
+Also search for:
+
+* hardcoded passwords
+* hardcoded JWT secrets
+* database credentials
+* accidental secret logging
+
+Do not expose any discovered secret in your final response.
+
+## Acceptance criteria
+
+Do not tell me merely that authentication was "implemented."
+
+Actually:
+
+1. inspect the existing architecture
+2. implement the auth system
+3. migrate the database if necessary
+4. seed a development admin safely
+5. protect all admin routes
+6. run the backend
+7. run the tests
+8. test the authentication flow
+9. report exactly what changed
+10. report any remaining security concerns
+
+Keep the implementation focused.
+
+This is a backend security pass only.
+
+After this is working, STOP.
+
+Do not proceed to frontend/API integration, Stripe, payment processing, email notifications, or the admin dashboard yet.

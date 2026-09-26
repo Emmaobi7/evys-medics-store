@@ -2,9 +2,13 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { getClient, query } from '../db/connection';
 import { validate } from '../middleware/validate';
+import { requireAuth, requireAdmin } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 
 export const adminRouter = Router();
+
+// Enforce authentication & administrator authorization on ALL admin endpoints
+adminRouter.use(requireAuth, requireAdmin);
 
 // ==================== ADMIN PRODUCTS ====================
 
