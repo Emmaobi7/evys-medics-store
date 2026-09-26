@@ -213,6 +213,7 @@ export interface CreateOrderPayload {
   shippingCity: string;
   shippingPostcode: string;
   shippingCountry?: string;
+  idempotencyKey?: string;
   items: Array<{
     productId: string;
     quantity: number;

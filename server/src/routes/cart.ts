@@ -10,9 +10,13 @@ const validateCartSchema = z.object({
   body: z.object({
     items: z.array(
       z.object({
-        productId: z.string().optional(),
-        sku: z.string().optional(),
-        quantity: z.number().int().min(1),
+        productId: z.string().trim().optional(),
+        sku: z.string().trim().optional(),
+        quantity: z
+          .number()
+          .int('Quantity must be an integer')
+          .positive('Quantity must be greater than 0')
+          .max(9999, 'Quantity must not exceed 9999'),
       })
     ),
   }),

@@ -1,0 +1,410 @@
+We are continuing the existing EVYS Medical project.
+
+The customer-facing frontend is now connected to the real Express/PostgreSQL backend.
+
+The previous integration pass is COMPLETE.
+
+DO NOT redesign the frontend.
+DO NOT rebuild the backend.
+DO NOT implement Stripe/payment yet.
+DO NOT build the admin dashboard yet.
+
+Our next task is to HARDEN AND TEST the real cart → checkout → order flow before payment integration.
+
+## CURRENT STATE
+
+The system currently has:
+
+* PostgreSQL/Neon
+* Express + TypeScript
+* Zod validation
+* product catalogue
+* inventory
+* product details
+* categories
+* search
+* SKU Quick Order
+* cart validation
+* transactional order creation
+* stock deduction
+* immutable order snapshots
+* JWT authentication
+* admin authorization
+* customer-facing frontend API integration
+
+The frontend currently connects to:
+
+POST /api/v1/cart/validate
+
+POST /api/v1/orders
+
+The existing checkout UI is already calling the real order API.
+
+Do not replace this architecture unless there is a concrete bug requiring it.
+
+---
+
+# STEP 1 — INSPECT THE CURRENT ORDER IMPLEMENTATION
+
+Before modifying anything, inspect:
+
+* CartContext
+* checkout flow
+* CheckoutMockModal
+* cart validation endpoint
+* order creation endpoint
+* order database schema
+* inventory logic
+* transaction handling
+* order status logic
+* price calculation
+* stock calculation
+* order snapshot implementation
+
+Understand exactly how the current flow works.
+
+---
+
+# STEP 2 — VERIFY SERVER-SIDE PRICE AUTHORITY
+
+The browser must NEVER be trusted for:
+
+* product price
+* stock quantity
+* subtotal
+* total
+* discount
+* product availability
+
+The server must retrieve authoritative product/inventory information from PostgreSQL.
+
+A malicious customer should not be able to modify:
+
+{
+"price": 1
+}
+
+or:
+
+{
+"unitPrice": 1
+}
+
+in the frontend request and receive a cheaper order.
+
+Verify this with an actual test.
+
+If the current implementation already handles this correctly, keep it.
+
+If not, fix it.
+
+---
+
+# STEP 3 — STOCK CONCURRENCY
+
+Verify that order creation handles concurrent purchases safely.
+
+Example:
+
+Product has:
+
+stock = 1
+
+Two requests arrive at approximately the same time.
+
+Only ONE successful order should be able to consume that final unit.
+
+The second request must fail cleanly with an appropriate conflict/out-of-stock response.
+
+Stock must never become negative.
+
+Use a proper database transaction / atomic update / row locking strategy consistent with the existing architecture.
+
+Do not solve this only in the frontend.
+
+---
+
+# STEP 4 — TRANSACTION ATOMICITY
+
+Verify that order creation is atomic.
+
+The following operations should behave as one transaction:
+
+* validate cart
+* calculate authoritative prices
+* verify inventory
+* create order
+* create order items/snapshots
+* deduct inventory
+
+If something fails, the transaction must roll back appropriately.
+
+We must not end up with:
+
+Order created + stock not deducted
+
+or:
+
+Stock deducted + order not created
+
+or:
+
+Order partially created
+
+Test failure/rollback behavior.
+
+---
+
+# STEP 5 — ORDER SNAPSHOT
+
+Verify that an order stores the historical purchasing information required to preserve what the customer actually bought.
+
+An order should not depend on the current product price after creation.
+
+For example:
+
+Customer purchases:
+
+Product X
+quantity: 2
+unit price: £50
+
+Later the product price becomes £70.
+
+The existing order must still represent:
+
+2 × £50
+
+Inspect the current order snapshot implementation and test this.
+
+Do not redesign it if it already works.
+
+---
+
+# STEP 6 — DUPLICATE SUBMISSION
+
+The checkout UI can potentially send the same request twice because of:
+
+* double clicking
+* network retries
+* browser behavior
+* accidental repeated submission
+
+Investigate whether the current system can create duplicate orders from the same checkout submission.
+
+If there is no idempotency protection, implement an appropriate lightweight solution.
+
+Do NOT introduce a huge payment architecture yet.
+
+The eventual payment system will also need idempotency, so design this cleanly.
+
+---
+
+# STEP 7 — CART VALIDATION
+
+Verify:
+
+POST /api/v1/cart/validate
+
+correctly detects:
+
+* deleted product
+* unavailable product
+* insufficient stock
+* changed price
+* invalid quantity
+* invalid SKU/product reference
+
+The frontend should receive useful structured information that allows the checkout UI to tell the customer what needs to be corrected.
+
+Do not expose database internals.
+
+---
+
+# STEP 8 — QUANTITY VALIDATION
+
+Test:
+
+quantity = 0
+
+quantity = -1
+
+quantity = decimal
+
+quantity = extremely large number
+
+quantity = valid integer
+
+The backend must reject invalid quantities.
+
+Do not rely solely on HTML input restrictions.
+
+---
+
+# STEP 9 — ORDER TOTALS
+
+Verify the backend calculates:
+
+subtotal
++
+shipping/fees if applicable
+---------------------------
+
+# discounts if applicable
+
+total
+
+using authoritative values.
+
+If shipping/discount logic is not implemented yet, do not invent it.
+
+Simply make sure the current subtotal/total calculation cannot be manipulated by the browser.
+
+---
+
+# STEP 10 — CUSTOMER INFORMATION
+
+Inspect the current checkout payload and database model.
+
+Make sure customer information is validated with Zod.
+
+Do not store arbitrary unexpected fields.
+
+Do not expose sensitive information unnecessarily.
+
+If customer accounts are not implemented yet, do not create a full customer authentication system in this pass.
+
+Guest checkout can remain the current approach if that is what the existing system uses.
+
+---
+
+# STEP 11 — FRONTEND CHECKOUT UX
+
+Keep the existing EVYS checkout UI.
+
+Improve only what is necessary for real API behavior.
+
+Handle:
+
+### Success
+
+Order successfully created:
+
+→ show order confirmation
+→ show order reference
+→ clear cart only after confirmed successful order creation
+
+### Validation failure
+
+→ explain what needs correction
+→ do NOT clear cart
+
+### Stock conflict
+
+→ explain that availability changed
+→ refresh/revalidate cart
+→ do NOT clear cart
+
+### Network/server error
+
+→ show a recoverable error
+→ do NOT create a fake success state
+→ do NOT clear cart
+
+### Double click
+
+→ prevent duplicate submissions from the UI while request is pending
+
+---
+
+# STEP 12 — TEST SUITE
+
+Create/run automated tests for the critical cases.
+
+At minimum:
+
+1. Valid order → success
+2. Correct order total generated server-side
+3. Client attempts to manipulate price → rejected/ignored
+4. Quantity 0 → rejected
+5. Negative quantity → rejected
+6. Excessive quantity → rejected
+7. Insufficient stock → rejected
+8. Concurrent purchase of final unit → only one succeeds
+9. Failed transaction → no partial stock deduction
+10. Order snapshot preserves original price
+11. Duplicate submission behavior is safe
+12. Empty cart → rejected
+13. Invalid product/SKU → rejected
+14. Successful order → stock decreases correctly
+15. Successful order → order items/snapshots created correctly
+
+Use the project's existing test setup.
+
+Do not add a new testing framework unless necessary.
+
+---
+
+# STEP 13 — REAL DATABASE VERIFICATION
+
+Where practical, verify the results against PostgreSQL rather than trusting only HTTP responses.
+
+For example:
+
+Before:
+
+stock = 10
+
+After order quantity 3:
+
+stock = 7
+
+And verify the order item contains the authoritative price.
+
+Do not expose database credentials in logs or final output.
+
+---
+
+# STEP 14 — BUILD + TYPECHECK
+
+Run:
+
+* server TypeScript check
+* frontend TypeScript check
+* production build
+* relevant backend tests
+* order-flow tests
+
+Fix actual errors rather than suppressing TypeScript or test failures.
+
+---
+
+# IMPORTANT
+
+Do NOT:
+
+* implement Stripe
+* implement Paystack
+* implement payment webhooks
+* create an admin dashboard
+* redesign checkout
+* create customer authentication
+* replace the existing database architecture
+* introduce unnecessary dependencies
+* use frontend values as the financial source of truth
+
+This pass is about making the current order engine trustworthy before we attach real money to it.
+
+At the end, report:
+
+1. exact files changed
+2. order-flow behavior verified
+3. security/validation issues found
+4. fixes made
+5. tests run
+6. test results
+7. any remaining limitations
+
+If everything is already correct, do not make unnecessary changes.
+
+STOP after the order/cart flow has been hardened and tested.

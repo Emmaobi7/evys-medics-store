@@ -15,6 +15,8 @@ export async function runMigrations() {
     const schemaSqlPath = path.resolve(__dirname, 'schema.sql');
     const sql = fs.readFileSync(schemaSqlPath, 'utf8');
     
+    await client.query(`SET search_path TO ${config.dbSchema}, public;`);
+    await client.query(`ALTER TABLE IF EXISTS orders ADD COLUMN IF NOT EXISTS idempotency_key VARCHAR(128) UNIQUE;`);
     await client.query(sql);
     console.log('[DB Migration] Schema created/verified successfully.');
   } catch (err: any) {

@@ -9,20 +9,25 @@ export const ordersRouter = Router();
 
 const createOrderSchema = z.object({
   body: z.object({
-    customerName: z.string().min(2, 'Customer name is required'),
-    customerEmail: z.string().email('Valid email is required'),
-    customerPhone: z.string().min(6, 'Valid telephone is required'),
-    clinicName: z.string().optional(),
-    poNumber: z.string().optional(),
+    customerName: z.string().trim().min(2, 'Customer name is required').max(128, 'Customer name too long'),
+    customerEmail: z.string().trim().email('Valid email is required').max(128, 'Email too long'),
+    customerPhone: z.string().trim().min(6, 'Valid telephone is required').max(32, 'Phone too long'),
+    clinicName: z.string().trim().max(128).optional(),
+    poNumber: z.string().trim().max(64).optional(),
     paymentMethod: z.enum(['invoice', 'nhs_po', 'card', 'bacs']).default('invoice'),
-    shippingAddressLine1: z.string().min(3, 'Address is required'),
-    shippingCity: z.string().min(2, 'City is required'),
-    shippingPostcode: z.string().min(3, 'Postcode is required'),
-    shippingCountry: z.string().default('United Kingdom'),
+    shippingAddressLine1: z.string().trim().min(3, 'Address is required').max(255),
+    shippingCity: z.string().trim().min(2, 'City is required').max(128),
+    shippingPostcode: z.string().trim().min(3, 'Postcode is required').max(32),
+    shippingCountry: z.string().trim().max(64).default('United Kingdom'),
+    idempotencyKey: z.string().trim().max(128).optional(),
     items: z.array(
       z.object({
-        productId: z.string().min(1),
-        quantity: z.number().int().positive('Quantity must be greater than 0'),
+        productId: z.string().trim().min(1, 'Product ID is required'),
+        quantity: z
+          .number()
+          .int('Quantity must be an integer')
+          .positive('Quantity must be greater than 0')
+          .max(9999, 'Quantity must not exceed 9999'),
       })
     ).min(1, 'Order must contain at least one item'),
   }),
@@ -38,6 +43,26 @@ function generateOrderNumber(): string {
 }
 
 /**
+ * Helper to format order database row to standard API response
+ */
+function formatOrderRow(orderRow: any, itemCount?: number) {
+  return {
+    id: orderRow.id,
+    orderNumber: orderRow.order_number,
+    status: orderRow.status,
+    paymentStatus: orderRow.payment_status,
+    paymentMethod: orderRow.payment_method,
+    subtotalExVat: parseFloat(orderRow.subtotal_ex_vat),
+    shippingExVat: parseFloat(orderRow.shipping_ex_vat),
+    vatTotal: parseFloat(orderRow.vat_total),
+    grandTotalIncVat: parseFloat(orderRow.grand_total_inc_vat),
+    currency: orderRow.currency,
+    createdAt: orderRow.created_at,
+    itemCount: itemCount !== undefined ? itemCount : undefined,
+  };
+}
+
+/**
  * POST /api/v1/orders
  * Transaction-safe order creation with authoritative inventory, pricing, and snapshots
  */
@@ -45,6 +70,32 @@ ordersRouter.post(
   '/',
   validate(createOrderSchema),
   async (req: Request, res: Response, next: NextFunction) => {
+    const rawIdempotencyKey =
+      (req.headers['idempotency-key'] as string | undefined) ||
+      req.body.idempotencyKey;
+    const idempotencyKey = rawIdempotencyKey ? rawIdempotencyKey.trim() : undefined;
+
+    // Idempotency check: if key already exists, return previous order without deducting stock again
+    if (idempotencyKey) {
+      const existing = await query<any>(
+        'SELECT * FROM orders WHERE idempotency_key = $1 LIMIT 1;',
+        [idempotencyKey]
+      );
+      if (existing.rows.length > 0) {
+        const existingOrder = existing.rows[0];
+        const countRes = await query<{ count: string }>(
+          'SELECT COALESCE(SUM(quantity), 0) AS count FROM order_items WHERE order_id = $1;',
+          [existingOrder.id]
+        );
+        const itemCount = parseInt(countRes.rows[0]?.count || '0', 10);
+        return res.status(200).json({
+          message: 'Order already processed (idempotent duplicate request)',
+          isDuplicate: true,
+          order: formatOrderRow(existingOrder, itemCount),
+        });
+      }
+    }
+
     const client = await getClient();
 
     try {
@@ -102,14 +153,14 @@ ordersRouter.post(
       for (const item of items) {
         const prod = productMap.get(item.productId);
         if (!prod || !prod.is_active) {
-          throw new AppError(`Product with ID "${item.productId}" is not available.`, 400);
+          throw new AppError(`Product with ID "${item.productId}" is not available or has been discontinued.`, 400);
         }
 
         const currentStock = parseInt(prod.stock_count || '0', 10);
         if (prod.track_inventory && currentStock < item.quantity) {
           throw new AppError(
             `Insufficient stock for "${prod.name}" (SKU: ${prod.sku}). Available: ${currentStock}, Requested: ${item.quantity}`,
-            400
+            409
           );
         }
 
@@ -148,15 +199,16 @@ ordersRouter.post(
         ? 'invoice_pending'
         : 'pending';
 
-      // Insert Order
+      // Insert Order with idempotency key
       const insertOrderSql = `
         INSERT INTO orders (
           id, order_number, status, payment_status, payment_method,
           customer_name, customer_email, customer_phone, clinic_name, po_number,
           shipping_address_line1, shipping_city, shipping_postcode, shipping_country,
-          subtotal_ex_vat, shipping_ex_vat, vat_total, grand_total_inc_vat, currency
+          subtotal_ex_vat, shipping_ex_vat, vat_total, grand_total_inc_vat, currency,
+          idempotency_key
         )
-        VALUES ($1, $2, 'confirmed', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 'GBP')
+        VALUES ($1, $2, 'confirmed', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 'GBP', $18)
         RETURNING *;
       `;
 
@@ -178,9 +230,10 @@ ordersRouter.post(
         shippingExVat.toFixed(2),
         totalVat.toFixed(2),
         grandTotalIncVat.toFixed(2),
+        idempotencyKey || null,
       ]);
 
-      // Insert Order Items and decrement inventory
+      // Insert Order Items and decrement inventory with concurrency check
       for (const line of orderLines) {
         await client.query(
           `
@@ -202,36 +255,34 @@ ordersRouter.post(
           ]
         );
 
-        // Deduct stock if inventory tracking is enabled
+        // Atomic deduction with stock bounds check
         if (line.trackInventory) {
-          await client.query(
+          const updateRes = await client.query(
             `
             UPDATE inventory
-            SET stock_count = GREATEST(0, stock_count - $1), updated_at = NOW()
-            WHERE product_id = $2;
+            SET stock_count = stock_count - $1, updated_at = NOW()
+            WHERE product_id = $2 AND stock_count >= $1
+            RETURNING stock_count;
             `,
             [line.quantity, line.productId]
           );
+
+          if (updateRes.rowCount === 0) {
+            throw new AppError(
+              `Stock depleted for "${line.productNameSnapshot}" (SKU: ${line.skuSnapshot}) during order finalization.`,
+              409
+            );
+          }
         }
       }
 
       await client.query('COMMIT');
 
+      const totalItemsCount = orderLines.reduce((sum, l) => sum + l.quantity, 0);
+
       res.status(201).json({
         message: 'Order created successfully',
-        order: {
-          id: orderResult.rows[0].id,
-          orderNumber: orderResult.rows[0].order_number,
-          status: orderResult.rows[0].status,
-          paymentStatus: orderResult.rows[0].payment_status,
-          subtotalExVat: parseFloat(orderResult.rows[0].subtotal_ex_vat),
-          shippingExVat: parseFloat(orderResult.rows[0].shipping_ex_vat),
-          vatTotal: parseFloat(orderResult.rows[0].vat_total),
-          grandTotalIncVat: parseFloat(orderResult.rows[0].grand_total_inc_vat),
-          currency: orderResult.rows[0].currency,
-          createdAt: orderResult.rows[0].created_at,
-          itemCount: orderLines.reduce((sum, l) => sum + l.quantity, 0),
-        },
+        order: formatOrderRow(orderResult.rows[0], totalItemsCount),
       });
     } catch (error) {
       await client.query('ROLLBACK');

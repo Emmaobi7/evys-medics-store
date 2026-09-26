@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, CheckCircle2, ShieldCheck, Truck, Lock, ArrowRight, Building2, PackageCheck } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, CheckCircle2, ShieldCheck, Truck, Lock, ArrowRight, Building2, PackageCheck, AlertCircle } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { submitOrderToApi } from '../api/client';
 import { Button } from '../components/Button';
@@ -20,6 +20,15 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
   const [orderId, setOrderId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const idempotencyKeyRef = useRef<string>('');
+
+  // Generate a unique idempotency key when opening the modal
+  useEffect(() => {
+    if (isOpen) {
+      idempotencyKeyRef.current = `idem_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      setErrorMessage(null);
+    }
+  }, [isOpen]);
 
   const [shippingDetails, setShippingDetails] = useState({
     clinicName: '',
@@ -37,6 +46,13 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
+    if (cart.length === 0) {
+      setErrorMessage('Your basket is empty. Please add items before completing checkout.');
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMessage(null);
 
@@ -51,6 +67,7 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
       shippingCity: shippingDetails.city,
       shippingPostcode: shippingDetails.postcode,
       shippingCountry: 'United Kingdom',
+      idempotencyKey: idempotencyKeyRef.current,
       items: cart.map((item) => ({
         productId: item.product.id,
         quantity: item.quantity,
@@ -64,13 +81,11 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
       clearCart();
       onOrderCompleted();
     } catch (err: any) {
-      console.warn('[Checkout] API order submission fallback:', err.message);
-      // Fallback for demonstration mode if network fails
-      const fallbackId = 'EVS-ORD-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random() * 900000);
-      setOrderId(fallbackId);
-      setStep('confirmation');
-      clearCart();
-      onOrderCompleted();
+      console.error('[Checkout] API order submission error:', err);
+      // Display genuine error to the customer without clearing cart or creating fake success
+      setErrorMessage(
+        err.message || 'Unable to complete order dispatch. Please verify stock availability and your delivery details.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -125,9 +140,31 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
             <h2 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '6px' }}>
               Delivery &amp; Practice Information
             </h2>
-            <p style={{ fontSize: '0.875rem', color: 'var(--color-muted)', marginBottom: '24px' }}>
-              Complete shipping details for medical supply dispatch. (Frontend Demonstration Preview)
+            <p style={{ fontSize: '0.875rem', color: 'var(--color-muted)', marginBottom: '20px' }}>
+              Complete shipping details for medical supply dispatch.
             </p>
+
+            {errorMessage && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  backgroundColor: 'var(--color-danger-bg, #FEF2F2)',
+                  color: 'var(--color-danger, #DC2626)',
+                  border: '1px solid #FECACA',
+                  padding: '12px 16px',
+                  borderRadius: 'var(--radius-md)',
+                  marginBottom: '20px',
+                  fontSize: '0.875rem',
+                }}
+              >
+                <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>
+                  <strong>Order could not be submitted:</strong> {errorMessage}
+                </div>
+              </div>
+            )}
 
             <form onSubmit={handleSubmitOrder} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {/* Clinic / Practitioner details */}

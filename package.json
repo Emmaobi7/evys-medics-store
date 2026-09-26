@@ -12,7 +12,9 @@
     "db:migrate": "tsx server/src/db/migrate.ts",
     "db:seed": "tsx server/src/db/seed.ts",
     "db:seed:admin": "tsx server/src/db/seedAdmin.ts",
-    "test:auth": "tsx server/src/tests/auth.test.ts"
+    "test:auth": "tsx server/src/tests/auth.test.ts",
+    "test:orders": "tsx server/src/tests/orderFlow.test.ts",
+    "test:all": "tsx server/src/tests/auth.test.ts && tsx server/src/tests/orderFlow.test.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

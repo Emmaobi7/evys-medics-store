@@ -95,6 +95,7 @@ CREATE TABLE IF NOT EXISTS orders (
   vat_total NUMERIC(10, 2) NOT NULL DEFAULT 0.00 CHECK (vat_total >= 0),
   grand_total_inc_vat NUMERIC(10, 2) NOT NULL CHECK (grand_total_inc_vat >= 0),
   currency VARCHAR(8) DEFAULT 'GBP',
+  idempotency_key VARCHAR(128) UNIQUE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -136,6 +137,7 @@ CREATE INDEX IF NOT EXISTS idx_categories_parent ON categories(parent_id);
 CREATE INDEX IF NOT EXISTS idx_categories_slug ON categories(slug);
 
 CREATE INDEX IF NOT EXISTS idx_orders_number ON orders(order_number);
+CREATE INDEX IF NOT EXISTS idx_orders_idempotency ON orders(idempotency_key);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created_at DESC);
 
