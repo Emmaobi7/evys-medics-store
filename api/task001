@@ -1,0 +1,396 @@
+EVYS Medical frontend is now considered UI-FROZEN.
+
+Do NOT redesign the UI.
+
+Do NOT add new customer-facing features.
+
+Do NOT implement backend code.
+
+Do NOT implement Stripe.
+
+Do NOT create a database.
+
+This task is purely an ENGINEERING AUDIT of the existing frontend so we can prepare for backend integration.
+
+==================================================
+OBJECTIVE
+=========
+
+Inspect the existing EVYS Medical frontend and document exactly what data the future backend will need to provide.
+
+Do not invent a backend architecture yet.
+
+Do not assume a specific database.
+
+Do not assume Stripe.
+
+We want to understand what the frontend currently expects.
+
+==================================================
+
+1. PRODUCT DATA CONTRACT
+   ==================================================
+
+Inspect the current mock product objects/types.
+
+Document every field currently used.
+
+For each field provide:
+
+* field name
+* type
+* required/optional
+* example
+* where it is used
+
+Include things such as:
+
+* id
+* SKU
+* name
+* slug
+* category
+* description
+* images
+* price
+* VAT information
+* previous price
+* availability
+* stock status
+* rating
+* specifications
+* badges
+* related products
+
+Only include fields that actually exist in the current implementation.
+
+Separate:
+
+REQUIRED FOR UI
+
+from:
+
+OPTIONAL / NICE TO HAVE
+
+==================================================
+2. CATEGORY DATA
+================
+
+Inspect how categories are currently represented.
+
+Document:
+
+* category ID
+* name
+* slug
+* description if used
+* parent category if used
+* product relationship
+
+Determine whether the current frontend expects:
+
+flat categories
+
+or
+
+nested categories.
+
+Do not change the implementation.
+
+==================================================
+3. SEARCH
+=========
+
+Document exactly what the frontend search currently needs.
+
+Identify:
+
+* search input
+* result structure
+* suggestion structure
+* product fields displayed in suggestions
+* filtering fields
+* sorting fields
+* pagination/infinite loading assumptions
+
+Determine whether search currently expects:
+
+local filtering
+
+or
+
+a future API response.
+
+Do not implement the API.
+
+==================================================
+4. PRODUCT DETAIL
+=================
+
+Document every piece of product data required by the product detail page.
+
+Especially:
+
+* product identity
+* SKU
+* pricing
+* availability
+* images
+* specifications
+* description
+* related products
+
+Identify which data is displayed immediately and which is secondary.
+
+==================================================
+5. CART
+=======
+
+Inspect the current cart implementation.
+
+Document:
+
+* cart item structure
+* product reference
+* quantity
+* unit price
+* line total
+* subtotal
+* VAT
+* delivery
+* total
+
+Determine which values are currently calculated client-side.
+
+Clearly identify anything that MUST eventually be recalculated/validated by the backend rather than trusted from the browser.
+
+Do not change the cart implementation.
+
+==================================================
+6. QUICK ORDER
+==============
+
+Document the Quick Order data flow.
+
+Identify:
+
+SKU input
+→ product lookup
+→ product result
+→ quantity
+→ cart item
+
+Document exactly what the future API would need to return for an SKU lookup.
+
+==================================================
+7. USER / ACCOUNT
+=================
+
+Inspect any existing Account UI.
+
+Document what information the frontend currently expects.
+
+If the account UI is mostly placeholder, say so.
+
+Do not design an authentication system yet.
+
+==================================================
+8. CHECKOUT
+===========
+
+Inspect any existing checkout-related UI.
+
+Document:
+
+* customer information
+* delivery information
+* billing information
+* basket summary
+* totals
+* payment-related fields
+
+Clearly separate:
+
+FRONTEND DISPLAY DATA
+
+from:
+
+DATA THAT SHOULD EVENTUALLY BE SERVER-VALIDATED.
+
+Do not implement payment.
+
+==================================================
+9. ORDERS
+=========
+
+Based on the existing frontend, document the minimum order object we will eventually need.
+
+For example, determine whether the frontend needs:
+
+* order ID
+* customer
+* items
+* quantities
+* prices
+* VAT
+* delivery
+* total
+* status
+* timestamps
+* payment status
+
+Only include fields justified by the existing application or obvious required commerce behavior.
+
+==================================================
+10. ADMIN REQUIREMENTS
+======================
+
+Do not build the admin panel.
+
+Instead, inspect the frontend and identify the minimum management operations that the eventual admin system will need.
+
+Examples:
+
+Products:
+
+* create
+* edit
+* archive
+* stock/availability
+* pricing
+
+Orders:
+
+* view
+* update status
+* view customer
+* view items
+* fulfilment information
+
+Do not invent unnecessary admin functionality.
+
+==================================================
+11. MOCK DATA DEPENDENCIES
+==========================
+
+Identify all places where the current frontend directly imports or depends on mock data.
+
+Document:
+
+file/component
+→ mock data dependency
+→ future API/data source
+
+The goal is to make future replacement straightforward.
+
+==================================================
+12. FRONTEND → BACKEND BOUNDARIES
+=================================
+
+Create a simple table:
+
+Frontend responsibility | Backend responsibility
+
+For example:
+
+Display product | Store/serve product
+
+Calculate visual quantity state | Validate quantity
+
+Display price | Authoritative price
+
+Display cart | Validate cart
+
+Create checkout request | Create authoritative order
+
+Display payment status | Verify payment
+
+Do not implement anything.
+
+==================================================
+13. API CONTRACT PROPOSAL
+
+Based strictly on the current frontend, propose a minimal future API surface.
+
+For example:
+
+GET /products
+GET /products/:slug
+GET /categories
+GET /search
+GET /products/sku/:sku
+
+POST /cart/validate
+POST /orders
+GET /orders/:id
+
+But DO NOT assume these exact routes are final.
+
+Mark them as:
+
+PROPOSED
+
+rather than implemented.
+
+Keep the API minimal.
+
+==================================================
+14. FINAL REPORT
+
+Return:
+
+### Product Contract
+
+Fields and types.
+
+### Category Contract
+
+Fields and relationships.
+
+### Search Contract
+
+Required request/response data.
+
+### Cart Contract
+
+Current structure and server validation requirements.
+
+### Quick Order Contract
+
+SKU lookup requirements.
+
+### Checkout Contract
+
+Required information.
+
+### Order Contract
+
+Minimum order structure.
+
+### Admin Requirements
+
+Minimum operations.
+
+### Mock Data Dependencies
+
+Where the frontend currently relies on mock data.
+
+### Proposed API Surface
+
+Minimal endpoints.
+
+### Open Decisions
+
+Things we must decide before backend implementation.
+
+IMPORTANT:
+
+Do not write backend code.
+
+Do not install dependencies.
+
+Do not change the UI.
+
+Do not redesign anything.
+
+This is an architectural discovery/documentation task only.
