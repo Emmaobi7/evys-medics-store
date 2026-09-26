@@ -1,0 +1,327 @@
+We have an important client-requested business identity change for the existing project.
+
+## CLIENT'S NEW INSTRUCTION
+
+The business is Nigerian, not a UK company.
+
+The client explicitly requested:
+
+> Anywhere you currently write "EVYS Medical", change it to "Evy's Projects".
+
+The brand must be written as:
+
+**Evy's Projects**
+
+and:
+
+**Evy's**
+
+not:
+
+* EVYS Medical
+* Evys Medical
+* Evys
+* EVYS
+
+## IMPORTANT
+
+This is a rebrand/content/business-context pass.
+
+Do NOT rebuild the application.
+Do NOT redesign the existing UI.
+Do NOT change the established visual direction unless necessary to accommodate the new name.
+Do NOT implement payment yet.
+Do NOT change the database architecture.
+Do NOT rename technical identifiers unnecessarily.
+
+First inspect the entire repository and identify where the old business identity appears.
+
+Search comprehensively for:
+
+* EVYS Medical
+* Evys Medical
+* EVYS
+* Evys
+* evysmedics
+* evysmedics.co.uk
+* any UK-company-specific references
+* UK business/legal assumptions
+* UK payment assumptions
+* UK currency assumptions
+* UK tax/VAT assumptions
+* UK contact/business information
+
+## 1. CUSTOMER-FACING BRAND
+
+Update all customer-facing references to:
+
+**Evy's Projects**
+
+Examples include:
+
+* header
+* footer
+* logo text
+* homepage
+* page titles
+* browser titles
+* metadata
+* product/shop headings
+* about/company sections
+* checkout
+* order confirmation
+* error messages where applicable
+* navigation
+* mobile navigation
+* empty states
+* loading states if branded
+* emails/templates if they already exist
+* customer-facing API responses if they contain the old brand
+
+Where the shorter brand is appropriate, use:
+
+**Evy's**
+
+Do not write:
+
+"Evys"
+
+The apostrophe must remain.
+
+## 2. TECHNICAL IDENTIFIERS
+
+DO NOT blindly rename technical identifiers just because they contain EVYS.
+
+For example, do not unnecessarily rename:
+
+* database tables
+* database columns
+* source directories
+* package names
+* environment variable names
+* internal API identifiers
+* migration identifiers
+* Git history
+* unrelated code symbols
+
+Only change technical identifiers if they are actually exposed to customers or if keeping them would cause a functional/business problem.
+
+The goal is a clean customer-facing rebrand without creating unnecessary technical churn.
+
+## 3. DOMAIN / EMAIL REFERENCES
+
+Inspect existing references to:
+
+`evysmedics.co.uk`
+
+Determine where they are used.
+
+Do NOT invent a replacement domain.
+
+If the domain is only placeholder/development data, clearly document it.
+
+If it is customer-facing, replace it only where we have a confirmed new value.
+
+Do not guess the client's new domain.
+
+Likewise, inspect development/admin email addresses such as:
+
+`admin@evysmedics...`
+
+Do not invent a new production email address.
+
+If changing it is necessary for development seeding, use an environment variable rather than hardcoding a guessed business email.
+
+## 4. NIGERIAN BUSINESS CONTEXT
+
+The client has clarified that the company is Nigerian rather than a UK company.
+
+Update customer-facing copy that incorrectly states or implies that the business is a UK company.
+
+Do NOT invent:
+
+* Nigerian company registration numbers
+* physical addresses
+* phone numbers
+* tax identification numbers
+* CAC details
+* Nigerian office addresses
+* legal claims
+* payment details
+
+If existing content contains specific UK business claims, remove or neutralize the incorrect claim rather than replacing it with fabricated Nigerian information.
+
+For example, don't turn:
+
+"UK medical supplier"
+
+into:
+
+"Nigerian registered medical supplier"
+
+unless the client has actually provided that fact.
+
+Use neutral wording such as:
+
+"medical and laboratory supplies"
+
+where appropriate.
+
+## 5. DO NOT CHANGE PAYMENT YET
+
+This is especially important.
+
+Do NOT implement Stripe.
+Do NOT implement Paystack.
+Do NOT implement Flutterwave.
+Do NOT modify payment/webhook architecture.
+Do NOT decide currency yet.
+Do NOT invent Nigerian tax/VAT rules.
+
+We will handle payment architecture separately after this rebrand/business-context pass.
+
+However, identify and report any existing UK-specific payment/currency assumptions you find.
+
+Do not silently redesign those systems during this task.
+
+## 6. CURRENCY / PRICING
+
+Do not blindly replace every `£` with `₦`.
+
+First determine whether the current currency is:
+
+* hardcoded UI text
+* database configuration
+* product seed data
+* backend calculation
+* frontend formatting
+* placeholder/demo data
+
+If currency is currently hardcoded and clearly represents the old UK assumption, identify it and report it.
+
+Do not make a business decision about the new currency without confirmation.
+
+## 7. SEO / METADATA
+
+Update:
+
+* document title
+* meta description
+* Open Graph title/description if present
+* favicon-related text if applicable
+* structured metadata if present
+
+to use:
+
+**Evy's Projects**
+
+Avoid stuffing both old and new brand names into metadata.
+
+## 8. BACKEND / API
+
+Inspect backend responses for customer-visible branding.
+
+Update customer-facing branding where necessary.
+
+Do not rename API paths simply because they contain old internal naming unless the old name is actually exposed as part of the public customer-facing API contract.
+
+Preserve API compatibility.
+
+## 9. ADMIN / DEVELOPMENT DATA
+
+Inspect:
+
+* admin seed
+* development seed products
+* test fixtures
+* test emails
+* test order data
+
+Do not break the existing automated test suite.
+
+If test/development data contains the old brand, decide whether it is:
+
+A. customer-visible → update it
+
+or
+
+B. internal fixture/technical data → it can remain unless it creates confusion.
+
+Do not compromise tests merely for cosmetic consistency.
+
+## 10. SEARCH FOR MISSED REFERENCES
+
+After making changes, run a repository-wide search again for:
+
+`EVYS Medical`
+
+`Evys Medical`
+
+`EVYS`
+
+`Evys`
+
+`evysmedics`
+
+`evysmedics.co.uk`
+
+For every remaining occurrence, classify it as:
+
+* customer-facing and should be changed
+* technical/internal and intentionally retained
+* test/development data and intentionally retained
+* requires client information before changing
+
+Do not leave unexplained customer-facing occurrences.
+
+## 11. VISUAL QA
+
+Run the application and inspect the major customer-facing pages:
+
+* Homepage
+* Shop
+* Product detail
+* Search
+* Quick Order
+* Cart
+* Checkout
+* Order confirmation
+* Mobile navigation
+* Footer
+
+Make sure:
+
+**Evy's Projects**
+
+looks natural throughout the existing design.
+
+Do not redesign the site.
+
+## 12. TESTS
+
+Run:
+
+* backend TypeScript check
+* frontend TypeScript check
+* existing auth tests
+* existing order tests
+* production build
+
+The rebrand must not break functionality.
+
+## 13. FINAL REPORT
+
+At the end report:
+
+1. Customer-facing references changed
+2. UK-specific assumptions found
+3. UK-specific assumptions intentionally left unchanged and why
+4. Technical identifiers intentionally left unchanged
+5. Files changed
+6. Tests run/results
+7. Any places requiring information from the client
+8. Any remaining old-brand occurrences and why they remain
+
+Do NOT proceed to payment implementation after this.
+
+STOP after the rebrand and Nigerian business-context cleanup is complete.

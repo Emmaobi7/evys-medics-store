@@ -47,7 +47,7 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
   } catch (err: any) {
     if (err instanceof ApiClientError) throw err;
     throw new ApiClientError(
-      err.message || 'Unable to connect to EVYS Medical server. Please check your network connection.',
+      err.message || "Unable to connect to Evy's Projects server. Please check your network connection.",
       0
     );
   }

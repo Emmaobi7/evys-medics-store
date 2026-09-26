@@ -146,10 +146,10 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             </h2>
           </div>
           <p style={{ fontSize: '0.9375rem', color: 'var(--color-ink)', lineHeight: 1.6, marginBottom: '8px' }}>
-            UK delivery available.
+            Fast dispatch and reliable delivery available.
           </p>
           <p style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>
-            Delivery options and estimated times are shown during checkout.
+            Delivery options and estimated dispatch times are shown during checkout.
           </p>
         </div>
       </div>

@@ -37,12 +37,13 @@ export const CartPage: React.FC<CartPageProps> = ({
 
   const handleApplyPromo = (e: React.FormEvent) => {
     e.preventDefault();
-    if (promoCode.trim().toUpperCase() === 'EVYS10' || promoCode.trim().toUpperCase() === 'CLINIC10') {
+    const code = promoCode.trim().toUpperCase();
+    if (code === 'EVY10' || code === 'EVYS10' || code === 'CLINIC10') {
       const discount = subtotal * 0.1;
       setAppliedDiscount(discount);
-      showToast('Promo Code Applied', '10% Healthcare discount applied to your order.');
+      showToast('Promo Code Applied', '10% discount applied to your order.');
     } else {
-      showToast('Invalid Code', 'Try code EVYS10 or CLINIC10 for 10% discount.', 'warning');
+      showToast('Invalid Code', 'Try code EVY10 or CLINIC10 for 10% discount.', 'warning');
     }
   };
 
@@ -277,9 +278,9 @@ export const CartPage: React.FC<CartPageProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-primary)', marginBottom: '4px' }}>
               <Truck size={14} />
               {shippingRemaining > 0 ? (
-                <span>Add £{shippingRemaining.toFixed(2)} more for Free UK Delivery</span>
+                <span>Add £{shippingRemaining.toFixed(2)} more for Free Delivery</span>
               ) : (
-                <span style={{ color: 'var(--color-success)' }}>Free UK Delivery Applied!</span>
+                <span style={{ color: 'var(--color-success)' }}>Free Delivery Applied!</span>
               )}
             </div>
             <div style={{ width: '100%', height: '6px', backgroundColor: 'rgba(8, 126, 139, 0.15)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
@@ -299,7 +300,7 @@ export const CartPage: React.FC<CartPageProps> = ({
               <Tag size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-muted)' }} />
               <input
                 type="text"
-                placeholder="Code (e.g. EVYS10)"
+                placeholder="Code (e.g. EVY10)"
                 value={promoCode}
                 onChange={(e) => setPromoCode(e.target.value)}
                 style={{
@@ -333,7 +334,7 @@ export const CartPage: React.FC<CartPageProps> = ({
             )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: 'var(--color-muted)' }}>
-              <span>UK Delivery</span>
+              <span>Delivery</span>
               <span style={{ fontWeight: 600, color: 'var(--color-ink)' }}>
                 {estimatedShipping === 0 ? 'FREE' : `£${estimatedShipping.toFixed(2)}`}
               </span>

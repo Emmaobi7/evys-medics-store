@@ -113,7 +113,7 @@ export async function seedDatabase() {
           prod.slug,
           prod.category,
           prod.subcategory || null,
-          prod.brand || 'EVYS Medical',
+          prod.brand || "Evy's Projects",
           prod.shortDescription || '',
           fullDescription,
           prod.productType || null,

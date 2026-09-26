@@ -56,7 +56,7 @@ export const CATEGORIES: Category[] = [
     id: 'medical-equipment',
     name: 'Medical Equipment',
     shortName: 'Equipment',
-    description: 'Reliable equipment for clinical and professional healthcare use across the UK.',
+    description: 'Reliable equipment for clinical and professional healthcare practices and facilities.',
     itemCount: 68,
     imageUrl: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80',
     featured: true,

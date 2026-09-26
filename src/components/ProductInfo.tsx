@@ -211,7 +211,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({ product, onBuyNow }) =
         }}
       >
         <Truck size={16} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
-        <span>UK delivery available. Standard delivery (£4.95) or Free on orders over £50 ex. VAT.</span>
+        <span>Reliable delivery &amp; dispatch. Free delivery on qualifying orders over £50 ex. VAT.</span>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 /**
- * EVYS Medical — Order Engine & Cart Validation Automated Test Suite
+ * Evy's Projects — Order Engine & Cart Validation Automated Test Suite
  *
  * Covers 15 critical test cases:
  * 1. Valid order -> success (201)
@@ -49,7 +49,7 @@ async function getProductAndStock(productId: string) {
 
 async function runTests() {
   console.log('====================================================');
-  console.log('🧪 RUNNING EVYS MEDICAL ORDER & CART TEST SUITE');
+  console.log('🧪 RUNNING EVY\'S PROJECTS ORDER & CART TEST SUITE');
   console.log(`🎯 Target API: ${BASE_URL}`);
   console.log('====================================================\n');
 

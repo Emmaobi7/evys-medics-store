@@ -51,7 +51,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           <div className="hero-grid">
             <div>
               <div className="hero-pill-badge">
-                <span>UK Healthcare &amp; Laboratory Supplier</span>
+                <span>Medical &amp; Laboratory Supplies</span>
               </div>
 
               <h1 className="hero-title">
@@ -60,7 +60,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               </h1>
 
               <p className="hero-subtitle">
-                Professional medical, laboratory and healthcare essentials for organisations and individuals across the UK.
+                Professional medical, laboratory and healthcare essentials for clinics, research laboratories, and organisations.
               </p>
 
               <div className="hero-cta-group">
@@ -97,7 +97,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               <div className="hero-trust-badges">
                 <div className="hero-trust-item">
                   <CheckCircle2 size={18} />
-                  <span>UK-wide delivery available</span>
+                  <span>Reliable delivery &amp; dispatch</span>
                 </div>
                 <div className="hero-trust-item">
                   <CheckCircle2 size={18} />
@@ -181,7 +181,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               <div className="section-eyebrow">Professional Selection</div>
               <h2 className="section-title">Featured Products</h2>
               <p className="section-subtitle">
-                In-demand clinical devices, examination supplies, and laboratory instruments ready for UK dispatch.
+                In-demand clinical devices, examination supplies, and laboratory instruments ready for dispatch.
               </p>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
@@ -239,15 +239,15 @@ export const HomePage: React.FC<HomePageProps> = ({
                 </span>
                 <h2>Equip Your Organisation with Reliable Supplies</h2>
                 <p>
-                  From single-use clinical consumables to precision laboratory apparatus, EVYS supplies dependable products for healthcare environments, research laboratories, and professionals across the UK.
+                  From single-use clinical consumables to precision laboratory apparatus, Evy's Projects supplies dependable products for healthcare environments, research laboratories, and professionals.
                 </p>
 
                 <div className="promo-perks-list">
                   <div className="promo-perk">
-                    <CheckCircle2 size={16} /> Transparent Pricing in GBP
+                    <CheckCircle2 size={16} /> Transparent Pricing
                   </div>
                   <div className="promo-perk">
-                    <CheckCircle2 size={16} /> Tracked Courier Delivery
+                    <CheckCircle2 size={16} /> Tracked Dispatch &amp; Delivery
                   </div>
                   <div className="promo-perk">
                     <CheckCircle2 size={16} /> Direct SKU Quick Ordering
@@ -331,7 +331,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           <div className="cta-box">
             <h2>Ready to stock your practice?</h2>
             <p>
-              Explore our full range of medical and laboratory supplies with straightforward ordering and UK delivery.
+              Explore our full range of medical and laboratory supplies with straightforward ordering and reliable delivery.
             </p>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
               <Button

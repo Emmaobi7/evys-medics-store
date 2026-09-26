@@ -55,7 +55,7 @@ export interface Product {
   images: string[];
   inStock: boolean;
   stockCount: number;
-  leadTime: string; // e.g. "UK delivery available"
+  leadTime: string; // e.g. "Reliable delivery available"
   brand: string;
   isFeatured?: boolean;
   isPromoEssential?: boolean;

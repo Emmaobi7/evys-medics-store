@@ -25,7 +25,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({
           Home
         </a>
         <ChevronRight size={14} />
-        <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>About EVYS</span>
+        <span style={{ color: 'var(--color-ink)', fontWeight: 600 }}>About Evy's Projects</span>
       </nav>
 
       {/* Header */}
@@ -35,7 +35,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({
           Professional healthcare supplies, made simple.
         </h1>
         <p style={{ fontSize: '1.125rem', lineHeight: 1.6 }}>
-          EVYS supplies medical devices, laboratory equipment, and healthcare essentials for professionals, organisations, and individuals across the UK.
+          Evy's Projects supplies medical devices, laboratory equipment, and healthcare essentials for professionals, clinics, and organisations.
         </p>
       </div>
 
@@ -46,7 +46,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({
           className={`tab-btn ${tab === 'about' ? 'active' : ''}`}
           onClick={() => setTab('about')}
         >
-          About EVYS
+          About Evy's Projects
         </button>
         <button
           type="button"
@@ -72,10 +72,10 @@ export const AboutPage: React.FC<AboutPageProps> = ({
               Reliable Equipment for Healthcare &amp; Research
             </h2>
             <p style={{ marginBottom: '16px', lineHeight: 1.7 }}>
-              At EVYS, we focus on providing a clear, dependable, and efficient online buying experience for clinics, diagnostic laboratories, healthcare workers, and educational institutions.
+              At Evy's Projects, we focus on providing a clear, dependable, and efficient online buying experience for clinics, diagnostic laboratories, healthcare workers, and educational institutions.
             </p>
             <p style={{ marginBottom: '24px', lineHeight: 1.7 }}>
-              Our curated product range spans diagnostic instruments, laboratory microscopy, everyday consumables, and medical apparel with transparent UK pricing.
+              Our curated product range spans diagnostic instruments, laboratory microscopy, everyday consumables, and medical apparel with transparent pricing.
             </p>
 
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
@@ -108,15 +108,15 @@ export const AboutPage: React.FC<AboutPageProps> = ({
       {/* Tab 2: Delivery */}
       {tab === 'delivery' && (
         <div style={{ maxWidth: '840px', backgroundColor: 'var(--color-white)', padding: '36px', borderRadius: 'var(--radius-xl)', border: '1px solid var(--color-border)' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '16px' }}>UK Delivery Information</h2>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '16px' }}>Delivery Information</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', lineHeight: 1.7 }}>
             <p>
-              We provide straightforward delivery for customers across the UK mainland.
+              We provide straightforward dispatch and delivery for healthcare and laboratory customers.
             </p>
             <ul style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <li><strong>Orders over £50.00 ex. VAT:</strong> Free UK Mainland Delivery.</li>
-              <li><strong>Orders under £50.00 ex. VAT:</strong> Standard £4.95 courier delivery.</li>
-              <li>Estimated delivery times and express options are displayed during checkout.</li>
+              <li><strong>Orders over qualifying threshold:</strong> Free Standard Delivery.</li>
+              <li><strong>Orders under threshold:</strong> Standard courier dispatch fee.</li>
+              <li>Estimated delivery times and express dispatch options are displayed during checkout.</li>
             </ul>
           </div>
         </div>

@@ -68,7 +68,7 @@ export const Header: React.FC<HeaderProps> = ({
     <header className={`site-header ${isScrolled ? 'scrolled' : ''}`}>
       <div className="container" style={{ position: 'relative' }}>
         <div className="header-inner">
-          {/* Brand Logo with EVYS branding */}
+          {/* Brand Logo with Evy's Projects branding */}
           <a
             href="#home"
             className="brand-logo"
@@ -76,11 +76,11 @@ export const Header: React.FC<HeaderProps> = ({
               e.preventDefault();
               handleNavClick('home');
             }}
-            aria-label="EVYS Medical Homepage"
+            aria-label="Evy's Projects Homepage"
           >
             <img
               src="/evys-logo.png"
-              alt="EVYS Logo"
+              alt="Evy's Projects Logo"
               style={{
                 height: '36px',
                 borderRadius: 'var(--radius-sm)',
@@ -92,8 +92,8 @@ export const Header: React.FC<HeaderProps> = ({
               }}
             />
             <div className="logo-text-wrap">
-              <span className="logo-name" style={{ letterSpacing: '0.04em' }}>
-                EVYS <span style={{ color: 'var(--color-primary)', fontWeight: 700 }}>MEDICAL</span>
+              <span className="logo-name" style={{ letterSpacing: '0.02em' }}>
+                Evy's <span style={{ color: 'var(--color-primary)', fontWeight: 700 }}>PROJECTS</span>
               </span>
               <span className="logo-tagline">Medical &amp; Laboratory Supplies</span>
             </div>
@@ -457,7 +457,7 @@ export const Header: React.FC<HeaderProps> = ({
                     cursor: 'pointer',
                   }}
                 >
-                  About EVYS
+                  About Evy's Projects
                 </button>
 
                 {/* Contact Link */}
@@ -598,8 +598,8 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
                   <span style={{ color: 'var(--color-muted)' }}>Official Email:</span>
-                  <a href="mailto:orders@mazimedics.co.uk" style={{ fontWeight: 600, color: 'var(--color-ink)' }}>
-                    orders@mazimedics.co.uk
+                  <a href="mailto:orders@evysprojects.com" style={{ fontWeight: 600, color: 'var(--color-ink)' }}>
+                    orders@evysprojects.com
                   </a>
                 </div>
               </div>

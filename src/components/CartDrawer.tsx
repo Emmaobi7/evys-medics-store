@@ -78,11 +78,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             <Truck size={15} />
             {shippingRemaining > 0 ? (
               <span>
-                Add <strong>£{shippingRemaining.toFixed(2)}</strong> more for FREE UK Delivery
+                Add <strong>£{shippingRemaining.toFixed(2)}</strong> more for FREE Delivery
               </span>
             ) : (
               <span style={{ color: 'var(--color-success)' }}>
-                You have qualified for <strong>FREE UK Delivery</strong>!
+                You have qualified for <strong>FREE Delivery</strong>!
               </span>
             )}
           </div>
@@ -221,7 +221,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               <span>£{(subtotal * 0.2).toFixed(2)}</span>
             </div>
             <div className="cart-summary-row">
-              <span>UK Mainland Shipping</span>
+              <span>Standard Shipping</span>
               <span>{estimatedShipping === 0 ? 'FREE' : `£${estimatedShipping.toFixed(2)}`}</span>
             </div>
             <div className="cart-summary-row total">

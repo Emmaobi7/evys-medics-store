@@ -38,7 +38,7 @@ app.use(express.json());
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'EVYS Medical Backend API',
+    service: "Evy's Projects Backend API",
     timestamp: new Date().toISOString(),
     environment: config.nodeEnv,
   });

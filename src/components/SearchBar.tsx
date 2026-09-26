@@ -55,7 +55,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 inStock: true,
                 stockCount: 10,
                 leadTime: 'Standard Courier Dispatch',
-                brand: 'EVYS Medical',
+                brand: "Evy's Projects",
                 rating: 5,
                 reviewCount: 1,
               }

@@ -128,7 +128,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({
                   <input
                     type="email"
                     required
-                    placeholder="e.vance@trust.nhs.uk"
+                    placeholder="e.vance@clinic.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '0.9375rem', boxSizing: 'border-box' }}
@@ -143,7 +143,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Marylebone Medical Practice"
+                    placeholder="e.g. Apex Health Clinic"
                     value={formData.organisation}
                     onChange={(e) => setFormData({ ...formData, organisation: e.target.value })}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '0.9375rem', boxSizing: 'border-box' }}
@@ -156,7 +156,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({
                   </label>
                   <input
                     type="tel"
-                    placeholder="020 7946 0192"
+                    placeholder="e.g. +234 800 000 0000"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '0.9375rem', boxSizing: 'border-box' }}
@@ -182,7 +182,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({
                 >
                   <option value="general">General Product Enquiry</option>
                   <option value="bulk-order">Bulk Practice / Clinic Order Quote</option>
-                  <option value="nhs-account">NHS 30-Day Credit Application</option>
+                  <option value="institutional-account">Institutional / 30-Day Credit Application</option>
                   <option value="technical">Technical Datasheets &amp; Compliance</option>
                   <option value="delivery">Existing Order &amp; Delivery Tracking</option>
                 </select>
@@ -227,9 +227,9 @@ export const ContactPage: React.FC<ContactPageProps> = ({
                   <Phone size={20} />
                 </div>
                 <div>
-                  <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-muted)' }}>Telephone Order Line</div>
-                  <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-ink)' }}>0800 456 7890</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>Freephone (UK Mainland)</div>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-muted)' }}>Telephone Support Line</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-ink)' }}>Customer Support &amp; Orders</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>Direct Procurement Assistance</div>
                 </div>
               </div>
 
@@ -239,7 +239,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({
                 </div>
                 <div>
                   <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-muted)' }}>Official Procurement Email</div>
-                  <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-ink)' }}>orders@mazimedics.co.uk</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-ink)' }}>orders@evysprojects.com</div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>2-hour guaranteed triage</div>
                 </div>
               </div>
@@ -249,9 +249,9 @@ export const ContactPage: React.FC<ContactPageProps> = ({
                   <MapPin size={20} />
                 </div>
                 <div>
-                  <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-muted)' }}>Headquarters &amp; Showroom</div>
-                  <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--color-ink)' }}>142 Harley Street</div>
-                  <div style={{ fontSize: '0.8125rem', color: 'var(--color-muted)' }}>Marylebone, London W1G 7LB</div>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: 'var(--color-muted)' }}>Operations &amp; Distribution</div>
+                  <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--color-ink)' }}>Central Logistics Hub</div>
+                  <div style={{ fontSize: '0.8125rem', color: 'var(--color-muted)' }}>Medical &amp; Laboratory Supplies</div>
                 </div>
               </div>
 

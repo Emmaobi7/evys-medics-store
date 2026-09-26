@@ -1,5 +1,5 @@
 /**
- * EVYS Medical — Authentication & Authorization Automated Test Suite
+ * Evy's Projects — Authentication & Authorization Automated Test Suite
  *
  * Tests all required authentication scenarios:
  * 1. Login with valid credentials -> success (200)
@@ -29,7 +29,7 @@ const results: TestResult[] = [];
 
 async function runTests() {
   console.log('====================================================');
-  console.log('🧪 RUNNING EVYS MEDICAL BACKEND AUTH TEST SUITE');
+  console.log('🧪 RUNNING EVY\'S PROJECTS BACKEND AUTH TEST SUITE');
   console.log(`🎯 Target API: ${BASE_URL}`);
   console.log('====================================================\n');
 

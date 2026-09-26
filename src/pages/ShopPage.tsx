@@ -192,10 +192,10 @@ export const ShopPage: React.FC<ShopPageProps> = ({
           </h1>
           <p style={{ fontSize: '0.95rem', color: 'var(--color-muted)', lineHeight: 1.6 }}>
             {filters.searchQuery
-              ? `Showing ${filteredProducts.length} product${filteredProducts.length === 1 ? '' : 's'} matching your search query in the EVYS supplier catalogue.`
+              ? `Showing ${filteredProducts.length} product${filteredProducts.length === 1 ? '' : 's'} matching your search query in the Evy's Projects catalogue.`
               : selectedCategoryObj
               ? selectedCategoryObj.description
-              : 'Supplying clinical equipment, diagnostic devices, sterile consumables, and laboratory apparatus across the UK.'}
+              : 'Supplying clinical equipment, diagnostic devices, sterile consumables, and laboratory apparatus.'}
           </p>
         </div>
 

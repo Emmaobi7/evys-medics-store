@@ -6,7 +6,7 @@ const PORT = config.port;
 
 const server = app.listen(PORT, async () => {
   console.log(`=========================================`);
-  console.log(`🏥 EVYS Medical API Server running`);
+  console.log(`🏥 Evy's Projects API Server running`);
   console.log(`🚀 URL: http://localhost:${PORT}`);
   console.log(`📦 Health Check: http://localhost:${PORT}/api/health`);
   console.log(`📂 DB Schema: ${config.dbSchema}`);

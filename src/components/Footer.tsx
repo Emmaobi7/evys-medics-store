@@ -16,7 +16,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <div className="brand-logo" style={{ color: 'var(--color-white)' }}>
               <img
                 src="/evys-logo.png"
-                alt="EVYS Logo"
+                alt="Evy's Projects Logo"
                 style={{
                   height: '36px',
                   borderRadius: 'var(--radius-sm)',
@@ -24,8 +24,8 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 }}
               />
               <div className="logo-text-wrap">
-                <span className="logo-name" style={{ color: 'var(--color-white)', letterSpacing: '0.04em' }}>
-                  EVYS <span style={{ color: 'var(--color-accent)' }}>MEDICAL</span>
+                <span className="logo-name" style={{ color: 'var(--color-white)', letterSpacing: '0.02em' }}>
+                  Evy's <span style={{ color: 'var(--color-accent)' }}>PROJECTS</span>
                 </span>
                 <span className="logo-tagline" style={{ color: '#94A3B8' }}>
                   Medical &amp; Laboratory Supplies
@@ -34,21 +34,17 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </div>
 
             <p>
-              Supplying medical devices, laboratory equipment, and clinical consumables for healthcare professionals, institutions, and individuals across the UK.
+              Supplying medical devices, laboratory equipment, and clinical consumables for healthcare professionals, institutions, and research laboratories.
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.8125rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#CBD5E1' }}>
-                <MapPin size={15} style={{ color: 'var(--color-accent)' }} />
-                <span>United Kingdom</span>
-              </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#CBD5E1' }}>
                 <Phone size={15} style={{ color: 'var(--color-accent)' }} />
                 <span>Customer Support: 0800 456 7890</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#CBD5E1' }}>
                 <Mail size={15} style={{ color: 'var(--color-accent)' }} />
-                <span>support@evys.co.uk</span>
+                <span>support@evysprojects.com</span>
               </div>
             </div>
           </div>
@@ -106,7 +102,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <ul className="footer-links-list">
               <li>
                 <a href="#about" onClick={(e) => { e.preventDefault(); onNavigate('about'); }}>
-                  About EVYS
+                  About Evy's Projects
                 </a>
               </li>
               <li>
@@ -128,7 +124,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <ul className="footer-links-list">
               <li>
                 <a href="#delivery" onClick={(e) => { e.preventDefault(); onNavigate('about', { tab: 'delivery' }); }}>
-                  UK Delivery Options
+                  Delivery &amp; Dispatch Options
                 </a>
               </li>
               <li>
@@ -153,7 +149,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         {/* Bottom Bar */}
         <div className="footer-bottom">
           <div>
-            © {new Date().getFullYear()} EVYS (Evy's Projects Global). All rights reserved.
+            © {new Date().getFullYear()} Evy's Projects. All rights reserved.
           </div>
 
           <div className="footer-socials">

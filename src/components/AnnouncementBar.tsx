@@ -9,7 +9,7 @@ export const AnnouncementBar: React.FC = () => {
         <div className="announcement-content desktop-only">
           <span className="announcement-item">
             <Truck size={13} strokeWidth={2.5} style={{ color: 'var(--color-accent)' }} />
-            <span>Free UK Delivery over £50</span>
+            <span>Free Delivery on orders over £50</span>
           </span>
           <span className="announcement-bullet">•</span>
           <span className="announcement-item">
@@ -27,7 +27,7 @@ export const AnnouncementBar: React.FC = () => {
         <div className="announcement-content mobile-only">
           <span className="announcement-item">
             <Truck size={12} strokeWidth={2.5} style={{ color: 'var(--color-accent)' }} />
-            <span>Free UK Delivery &gt; £50</span>
+            <span>Free Delivery &gt; £50</span>
           </span>
           <span className="announcement-bullet">•</span>
           <a href="tel:08004567890" className="announcement-item" style={{ color: 'inherit', textDecoration: 'none' }}>

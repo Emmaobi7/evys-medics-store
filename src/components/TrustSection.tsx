@@ -10,8 +10,8 @@ export const TrustSection: React.FC = () => {
     },
     {
       icon: <Truck size={24} strokeWidth={2} />,
-      title: 'UK-wide delivery',
-      description: 'Straightforward delivery for customers across the UK.',
+      title: 'Reliable dispatch',
+      description: 'Straightforward delivery for professional healthcare customers.',
     },
     {
       icon: <LockKeyhole size={24} strokeWidth={2} />,
@@ -29,12 +29,12 @@ export const TrustSection: React.FC = () => {
     <section className="trust-section">
       <div className="container">
         <div style={{ textAlign: 'center', maxWidth: '720px', margin: '0 auto 40px auto' }}>
-          <div className="section-eyebrow">Established Healthcare Supplier</div>
+          <div className="section-eyebrow">Medical &amp; Laboratory Supplies</div>
           <h2 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '8px' }}>
             Professional healthcare supplies, made simple.
           </h2>
           <p style={{ fontSize: '0.9375rem', color: 'var(--color-muted)' }}>
-            Supplying medical, laboratory and healthcare essentials for professionals, organisations and individuals across the UK.
+            Supplying medical, laboratory and healthcare essentials for clinics, research facilities, and organisations.
           </p>
         </div>
 

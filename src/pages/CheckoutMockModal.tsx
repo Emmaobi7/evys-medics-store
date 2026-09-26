@@ -205,7 +205,7 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
                   <input
                     type="email"
                     required
-                    placeholder="j.smith@clinic.co.uk"
+                    placeholder="j.smith@clinic.com"
                     value={shippingDetails.email}
                     onChange={(e) => setShippingDetails({ ...shippingDetails, email: e.target.value })}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
@@ -218,7 +218,7 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
                   <input
                     type="tel"
                     required
-                    placeholder="07700 900123"
+                    placeholder="0800 456 7890"
                     value={shippingDetails.phone}
                     onChange={(e) => setShippingDetails({ ...shippingDetails, phone: e.target.value })}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
@@ -251,7 +251,7 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
                   <input
                     type="text"
                     required
-                    placeholder="UK Postcode (e.g. SW1A 1AA)"
+                    placeholder="Postal Code / Area"
                     value={shippingDetails.postcode}
                     onChange={(e) => setShippingDetails({ ...shippingDetails, postcode: e.target.value })}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
@@ -303,7 +303,7 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
                       checked={shippingDetails.paymentMethod === 'nhs-po'}
                       onChange={() => setShippingDetails({ ...shippingDetails, paymentMethod: 'nhs-po' })}
                     />
-                    <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>NHS Purchase Order</span>
+                    <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Purchase Order / Institutional PO</span>
                   </label>
                 </div>
               </div>
@@ -315,7 +315,7 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
                   <span style={{ fontWeight: 600 }}>£{subtotal.toFixed(2)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '6px' }}>
-                  <span>UK Delivery</span>
+                  <span>Delivery</span>
                   <span style={{ fontWeight: 600 }}>{estimatedShipping === 0 ? 'FREE' : `£${estimatedShipping.toFixed(2)}`}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '6px' }}>

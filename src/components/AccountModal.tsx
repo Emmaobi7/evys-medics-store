@@ -26,7 +26,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
 
   const handleSubmitNHS = (e: React.FormEvent) => {
     e.preventDefault();
-    showToast('NHS Account Verified', `Institutional credit active for ${nhsTrust || 'Trust'}`);
+    showToast('Account Verified', `Institutional credit active for ${nhsTrust || 'Healthcare Facility'}`);
     onClose();
   };
 
@@ -84,7 +84,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
           </div>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Account &amp; Institutional Access</h2>
           <p style={{ fontSize: '0.875rem', marginTop: '4px' }}>
-            Manage clinic re-orders, NHS purchase orders, and invoices.
+            Manage clinic re-orders, institutional purchase orders, and invoices.
           </p>
         </div>
 
@@ -131,7 +131,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
             }}
             onClick={() => setTab('nhs')}
           >
-            NHS / Clinic Portal
+            Institutional Portal
           </button>
         </div>
 
@@ -144,7 +144,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
               <input
                 type="email"
                 required
-                placeholder="doctor@clinic.co.uk"
+                placeholder="doctor@clinic.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 style={{
@@ -185,12 +185,12 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
           <form onSubmit={handleSubmitNHS} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px' }}>
-                NHS Trust / Healthcare Organisation
+                Healthcare Organisation / Facility
               </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. Imperial College Healthcare NHS Trust"
+                placeholder="e.g. City Health Clinic & Laboratory"
                 value={nhsTrust}
                 onChange={(e) => setNhsTrust(e.target.value)}
                 style={{
@@ -210,7 +210,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
               <input
                 type="text"
                 required
-                placeholder="e.g. PO-NHS-2026-994"
+                placeholder="e.g. PO-2026-994"
                 value={poNumber}
                 onChange={(e) => setPoNumber(e.target.value)}
                 style={{
@@ -224,7 +224,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
             </div>
 
             <Button variant="primary" size="lg" fullWidth type="submit" icon={<FileText size={18} />}>
-              Lookup NHS Purchase Order
+              Lookup Purchase Order
             </Button>
           </form>
         )}
