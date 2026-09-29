@@ -22,6 +22,7 @@ export const config = {
     secretKey: process.env.PAYSTACK_SECRET_KEY || 'sk_test_mock_paystack_secret_key_evys_2026',
     publicKey: process.env.PAYSTACK_PUBLIC_KEY || 'pk_test_mock_paystack_public_key_evys_2026',
     callbackUrl: process.env.PAYSTACK_CALLBACK_URL || 'http://localhost:5173/checkout/callback',
+    webhookUrl: process.env.PAYSTACK_WEBHOOK_URL || 'https://colleague-suffered-seasons-separated.trycloudflare.com/api/v1/payments/webhook',
     baseUrl: process.env.PAYSTACK_BASE_URL || 'https://api.paystack.co',
   },
   auth: {
