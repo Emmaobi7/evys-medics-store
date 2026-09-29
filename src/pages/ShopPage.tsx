@@ -36,13 +36,13 @@ export const ShopPage: React.FC<ShopPageProps> = ({
     brand: 'all',
     searchQuery: initialSearch,
     minPrice: 0,
-    maxPrice: 600,
+    maxPrice: 10000000,
     inStockOnly: false,
     sortBy: 'relevance',
     badgeFilter: initialBadge,
   });
 
-  const [productsList, setProductsList] = useState<Product[]>(PRODUCTS);
+  const [productsList, setProductsList] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [visibleCount, setVisibleCount] = useState(12);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
@@ -130,7 +130,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
       brand: 'all',
       searchQuery: '',
       minPrice: 0,
-      maxPrice: 600,
+      maxPrice: 10000000,
       inStockOnly: false,
       sortBy: 'relevance',
       badgeFilter: '',

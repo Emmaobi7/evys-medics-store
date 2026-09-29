@@ -41,8 +41,12 @@ export const HomePage: React.FC<HomePageProps> = ({
     };
   }, []);
 
-  const featuredProducts = productsList.filter((p) => p.isFeatured || p.rating >= 4.8).slice(0, 4);
-  const promoEssentials = productsList.filter((p) => p.isPromoEssential || p.inStock).slice(0, 4);
+  const featuredProducts = productsList.filter((p) => p.isFeatured).length > 0
+    ? productsList.filter((p) => p.isFeatured).slice(0, 8)
+    : productsList.slice(0, 8);
+  const promoEssentials = productsList.filter((p) => p.isPromoEssential || p.inStock).length > 0
+    ? productsList.filter((p) => p.isPromoEssential || p.inStock).slice(0, 4)
+    : productsList.slice(0, 4);
 
   return (
     <div>

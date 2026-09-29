@@ -98,7 +98,7 @@ export async function fetchProducts(filters?: Partial<FilterState> & { page?: nu
     if (filters.brand && filters.brand !== 'all') params.set('brand', filters.brand);
     if (filters.productType && filters.productType !== 'all') params.set('product_type', filters.productType);
     if (filters.minPrice !== undefined && filters.minPrice > 0) params.set('min_price', String(filters.minPrice));
-    if (filters.maxPrice !== undefined && filters.maxPrice < 10000) params.set('max_price', String(filters.maxPrice));
+    if (filters.maxPrice !== undefined && filters.maxPrice > 0 && filters.maxPrice < 10000000) params.set('max_price', String(filters.maxPrice));
     if (filters.inStockOnly) params.set('in_stock', 'true');
     if (filters.sortBy) params.set('sort', filters.sortBy);
     if (filters.page) params.set('page', String(filters.page));
