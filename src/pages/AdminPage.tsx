@@ -195,14 +195,46 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
   const handleCreateProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
-    if (!newProduct.name || !newProduct.sku || newProduct.priceExVat <= 0) {
-      showToast('Validation Error', 'Please specify a valid product name, SKU, and price.');
+
+    const trimmedName = newProduct.name?.trim();
+    const price = Number(newProduct.priceExVat);
+
+    if (!trimmedName || isNaN(price) || price <= 0) {
+      showToast('Validation Error', 'Please specify a valid product name and a price greater than 0.');
       return;
     }
+
+    const cleanSku = (newProduct.sku?.trim()) || `EVS-${Math.floor(10000 + Math.random() * 90000)}`;
+    const cleanSlug = (newProduct.slug?.trim() || trimmedName)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+
+    const payload: CreateProductPayload = {
+      name: trimmedName,
+      sku: cleanSku,
+      slug: cleanSlug,
+      categoryId: newProduct.categoryId || (categories[0]?.id || 'medical-equipment'),
+      subcategoryId: newProduct.subcategoryId || undefined,
+      brand: (newProduct.brand?.trim()) || "Evy's Clinical",
+      productType: newProduct.productType?.trim() || undefined,
+      priceExVat: price,
+      compareAtPriceExVat: newProduct.compareAtPriceExVat && Number(newProduct.compareAtPriceExVat) > 0 ? Number(newProduct.compareAtPriceExVat) : undefined,
+      vatRate: 0.20,
+      stockCount: Number(newProduct.stockCount) >= 0 ? Number(newProduct.stockCount) : 10,
+      leadTime: newProduct.leadTime?.trim() || 'Nationwide Delivery Available',
+      shortDescription: newProduct.shortDescription?.trim() || trimmedName,
+      description: newProduct.description?.trim() || newProduct.shortDescription?.trim() || trimmedName,
+      images: newProduct.images && newProduct.images.length > 0 && newProduct.images[0] ? newProduct.images : ['https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=800&q=80'],
+      specifications: newProduct.specifications || [],
+      features: newProduct.features || [],
+      isFeatured: Boolean(newProduct.isFeatured),
+    };
+
     setIsSubmittingProduct(true);
     try {
-      await createAdminProduct(token, newProduct);
-      showToast('Product Created', `"${newProduct.name}" is now live in the catalogue.`);
+      await createAdminProduct(token, payload);
+      showToast('Product Created', `"${payload.name}" is now live in the catalogue.`);
       setIsAddModalOpen(false);
       // Reset form
       setNewProduct({
@@ -230,7 +262,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
       });
       loadProducts();
     } catch (err: any) {
-      showToast('Creation Failed', err.message);
+      showToast('Creation Failed', err.message || 'Failed to create product');
     } finally {
       setIsSubmittingProduct(false);
     }
