@@ -52,7 +52,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
   
   // Login state (if not authenticated)
   const [loginEmail, setLoginEmail] = useState('admin@evysmedics.co.uk');
-  const [loginPassword, setLoginPassword] = useState('AdminPass123!');
+  const [loginPassword, setLoginPassword] = useState('EvysAdminPass2026!');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
