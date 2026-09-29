@@ -36,7 +36,7 @@ function AppContent() {
     return 'home';
   });
   const [pageParams, setPageParams] = useState<Record<string, any>>({});
-  const [selectedProduct, setSelectedProduct] = useState<Product>(PRODUCTS[0]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [isQuickOrderOpen, setIsQuickOrderOpen] = useState(false);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
@@ -105,7 +105,7 @@ function AppContent() {
           />
         )}
 
-        {currentPage === 'product' && (
+        {currentPage === 'product' && selectedProduct && (
           <ProductDetailPage
             product={selectedProduct}
             onSelectProduct={handleSelectProduct}

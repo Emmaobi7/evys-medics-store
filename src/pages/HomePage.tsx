@@ -23,18 +23,18 @@ export const HomePage: React.FC<HomePageProps> = ({
   onQuickView,
   onOpenQuickOrder,
 }) => {
-  const [productsList, setProductsList] = useState<Product[]>(PRODUCTS);
+  const [productsList, setProductsList] = useState<Product[]>([]);
 
   useEffect(() => {
     let isMounted = true;
     fetchProducts({ limit: 20 })
       .then((res) => {
-        if (isMounted && res.items && res.items.length > 0) {
-          setProductsList(res.items);
+        if (isMounted) {
+          setProductsList(res.items || []);
         }
       })
       .catch((err) => {
-        console.warn('[HomePage] API fetch fallback to cached catalog:', err.message);
+        console.warn('[HomePage] API fetch error:', err.message);
       });
     return () => {
       isMounted = false;
@@ -175,41 +175,43 @@ export const HomePage: React.FC<HomePageProps> = ({
       </section>
 
       {/* 5. Featured Products Grid */}
-      <section className="section" style={{ backgroundColor: 'var(--color-bg)' }}>
-        <div className="container">
-          <div className="section-header">
-            <div>
-              <div className="section-eyebrow">Professional Selection</div>
-              <h2 className="section-title">Featured Products</h2>
-              <p className="section-subtitle">
-                In-demand clinical devices, examination supplies, and laboratory instruments ready for dispatch.
-              </p>
+      {featuredProducts.length > 0 && (
+        <section className="section" style={{ backgroundColor: 'var(--color-bg)' }}>
+          <div className="container">
+            <div className="section-header">
+              <div>
+                <div className="section-eyebrow">Professional Selection</div>
+                <h2 className="section-title">Featured Products</h2>
+                <p className="section-subtitle">
+                  In-demand clinical devices, examination supplies, and laboratory instruments ready for dispatch.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <Button
+                  variant="outline-teal"
+                  size="sm"
+                  onClick={() => onNavigate('shop', { badge: 'Bestseller' })}
+                >
+                  Bestsellers
+                </Button>
+                <Button
+                  variant="outline-teal"
+                  size="sm"
+                  onClick={() => onNavigate('shop', { badge: 'Popular' })}
+                >
+                  Popular Items
+                </Button>
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <Button
-                variant="outline-teal"
-                size="sm"
-                onClick={() => onNavigate('shop', { badge: 'Bestseller' })}
-              >
-                Bestsellers
-              </Button>
-              <Button
-                variant="outline-teal"
-                size="sm"
-                onClick={() => onNavigate('shop', { badge: 'Popular' })}
-              >
-                Popular Items
-              </Button>
-            </div>
-          </div>
 
-          <ProductGrid
-            products={featuredProducts}
-            onSelectProduct={onSelectProduct}
-            onQuickView={onQuickView}
-          />
-        </div>
-      </section>
+            <ProductGrid
+              products={featuredProducts}
+              onSelectProduct={onSelectProduct}
+              onQuickView={onQuickView}
+            />
+          </div>
+        </section>
+      )}
 
       {/* 1. Established Trust Section */}
       <TrustSection />
@@ -279,48 +281,50 @@ export const HomePage: React.FC<HomePageProps> = ({
               </div>
 
               {/* Spotlight Product Mini Grid */}
-              <div className="promo-mini-grid">
-                {promoEssentials.slice(0, 4).map((p) => (
-                  <div
-                    key={p.id}
-                    onClick={() => onSelectProduct(p)}
-                    style={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '12px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      cursor: 'pointer',
-                      color: 'var(--color-ink)',
-                      transition: 'transform 200ms ease',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.03)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                  >
-                    <img
-                      src={p.images[0]}
-                      alt={p.name}
+              {promoEssentials.length > 0 && (
+                <div className="promo-mini-grid">
+                  {promoEssentials.slice(0, 4).map((p) => (
+                    <div
+                      key={p.id}
+                      onClick={() => onSelectProduct(p)}
                       style={{
-                        width: '100%',
-                        height: '100px',
-                        objectFit: 'contain',
-                        borderRadius: 'var(--radius-sm)',
-                        backgroundColor: '#F8FAFC',
-                        marginBottom: '8px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '12px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        cursor: 'pointer',
+                        color: 'var(--color-ink)',
+                        transition: 'transform 200ms ease',
                       }}
-                    />
-                    <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--color-primary)', fontWeight: 700 }}>
-                      {p.sku}
+                      onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.03)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+                    >
+                      <img
+                        src={p.images[0]}
+                        alt={p.name}
+                        style={{
+                          width: '100%',
+                          height: '100px',
+                          objectFit: 'contain',
+                          borderRadius: 'var(--radius-sm)',
+                          backgroundColor: '#F8FAFC',
+                          marginBottom: '8px',
+                        }}
+                      />
+                      <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--color-primary)', fontWeight: 700 }}>
+                        {p.sku}
+                      </div>
+                      <div style={{ fontSize: '0.8125rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {p.name}
+                      </div>
+                      <div style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--color-primary)', marginTop: '4px' }}>
+                        {formatNaira(p.price)}
+                      </div>
                     </div>
-                    <div style={{ fontSize: '0.8125rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {p.name}
-                    </div>
-                    <div style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--color-primary)', marginTop: '4px' }}>
-                      {formatNaira(p.price)}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
