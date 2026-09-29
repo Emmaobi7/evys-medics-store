@@ -23,18 +23,23 @@ import { AdminPage } from './pages/AdminPage';
 import { Product } from './types';
 import { PRODUCTS } from './data/products';
 
+const getPageFromPath = (): 'home' | 'shop' | 'product' | 'cart' | 'about' | 'contact' | 'callback' | 'admin' => {
+  if (typeof window === 'undefined') return 'home';
+  const path = window.location.pathname;
+  const search = window.location.search;
+  if (path === '/admin') return 'admin';
+  if (path === '/shop') return 'shop';
+  if (path === '/cart') return 'cart';
+  if (path === '/about') return 'about';
+  if (path === '/contact') return 'contact';
+  if (path === '/checkout/callback' || search.includes('reference=') || search.includes('trxref=')) {
+    return 'callback';
+  }
+  return 'home';
+};
+
 function AppContent() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'shop' | 'product' | 'cart' | 'about' | 'contact' | 'callback' | 'admin'>(() => {
-    if (typeof window !== 'undefined') {
-      const path = window.location.pathname;
-      const search = window.location.search;
-      if (path === '/admin') return 'admin';
-      if (path === '/checkout/callback' || search.includes('reference=') || search.includes('trxref=')) {
-        return 'callback';
-      }
-    }
-    return 'home';
-  });
+  const [currentPage, setCurrentPage] = useState<'home' | 'shop' | 'product' | 'cart' | 'about' | 'contact' | 'callback' | 'admin'>(getPageFromPath);
   const [pageParams, setPageParams] = useState<Record<string, any>>({});
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
@@ -43,16 +48,35 @@ function AppContent() {
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const { showToast } = useToast();
 
+  // Synchronize with browser Back / Forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPage(getPageFromPath());
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   // Scroll to top upon page navigation
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [currentPage, selectedProduct]);
 
   const handleNavigate = (page: string, params: Record<string, any> = {}) => {
-    // If navigating away from callback, clean browser query params cleanly
-    if (currentPage === 'callback' && typeof window !== 'undefined' && window.history?.pushState) {
-      window.history.pushState({}, '', window.location.pathname === '/checkout/callback' ? '/' : window.location.pathname);
+    let targetPath = '/';
+    if (page === 'admin') targetPath = '/admin';
+    else if (page === 'shop') targetPath = '/shop';
+    else if (page === 'cart') targetPath = '/cart';
+    else if (page === 'about') targetPath = '/about';
+    else if (page === 'contact') targetPath = '/contact';
+    else if (page === 'callback') targetPath = '/checkout/callback';
+
+    if (typeof window !== 'undefined' && window.history?.pushState) {
+      if (window.location.pathname !== targetPath) {
+        window.history.pushState({}, '', targetPath);
+      }
     }
+
     setCurrentPage(page as any);
     setPageParams(params);
   };

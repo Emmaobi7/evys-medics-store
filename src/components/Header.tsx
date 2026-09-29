@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ShoppingBag, User, Menu, X, ChevronDown, Zap, ChevronRight, Phone, Mail, FileText, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ShoppingBag, User, Menu, X, ChevronDown, Zap, ChevronRight, Phone, Mail, FileText, ArrowRight, ShieldCheck, LogOut } from 'lucide-react';
 import { SearchBar } from './SearchBar';
 import { MegaMenu } from './MegaMenu';
 import { useCart } from '../context/CartContext';
@@ -26,7 +26,42 @@ export const Header: React.FC<HeaderProps> = ({
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
   const [isShopAccordionOpen, setIsShopAccordionOpen] = useState(true);
   const [openSubAccordion, setOpenSubAccordion] = useState<string | null>(null);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [authUser, setAuthUser] = useState<any>(() => {
+    if (typeof window !== 'undefined') {
+      const raw = localStorage.getItem('evys_auth_user');
+      return raw ? JSON.parse(raw) : null;
+    }
+    return null;
+  });
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const { setIsCartOpen, totalItems } = useCart();
+
+  useEffect(() => {
+    const checkUser = () => {
+      if (typeof window !== 'undefined') {
+        const raw = localStorage.getItem('evys_auth_user');
+        setAuthUser(raw ? JSON.parse(raw) : null);
+      }
+    };
+    window.addEventListener('storage', checkUser);
+    const interval = setInterval(checkUser, 1000);
+    return () => {
+      window.removeEventListener('storage', checkUser);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Close user dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Sticky header shadow on scroll
   useEffect(() => {
@@ -184,6 +219,40 @@ export const Header: React.FC<HeaderProps> = ({
               onSelectCategory={(catId) => handleNavClick('shop', { category: catId })}
             />
 
+            {/* Admin Portal Direct Switcher Button (when authenticated as Admin) */}
+            {authUser?.role === 'ADMIN' && (
+              <button
+                type="button"
+                className="btn btn-sm"
+                onClick={() => handleNavClick(activePage === 'admin' ? 'shop' : 'admin')}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '7px 12px',
+                  backgroundColor: activePage === 'admin' ? '#f1f5f9' : '#0d9488',
+                  color: activePage === 'admin' ? '#0f172a' : '#ffffff',
+                  border: activePage === 'admin' ? '1px solid #cbd5e1' : 'none',
+                  borderRadius: '6px',
+                  fontWeight: 700,
+                  fontSize: '0.8125rem',
+                  cursor: 'pointer',
+                }}
+              >
+                {activePage === 'admin' ? (
+                  <>
+                    <ShoppingBag size={14} />
+                    <span>View Storefront</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck size={15} />
+                    <span>Admin Portal</span>
+                  </>
+                )}
+              </button>
+            )}
+
             {/* Quick Order Button */}
             <button
               type="button"
@@ -204,16 +273,140 @@ export const Header: React.FC<HeaderProps> = ({
               <span>Quick Order</span>
             </button>
 
-            {/* Account Link */}
-            <button
-              type="button"
-              className="action-btn"
-              onClick={onOpenAccount}
-              title="Account & Orders"
-              aria-label="Account and orders"
-            >
-              <User size={19} />
-            </button>
+            {/* Account Profile / Menu Popover */}
+            <div ref={userMenuRef} style={{ position: 'relative' }}>
+              <button
+                type="button"
+                className="action-btn"
+                onClick={() => {
+                  if (authUser) {
+                    setIsUserMenuOpen(!isUserMenuOpen);
+                  } else {
+                    onOpenAccount();
+                  }
+                }}
+                title={authUser ? `Signed in as ${authUser.email}` : 'Sign In / Account'}
+                aria-label="Account and orders"
+                style={{
+                  position: 'relative',
+                  backgroundColor: authUser ? '#f0fdf4' : 'transparent',
+                  color: authUser ? '#166534' : 'inherit',
+                  borderColor: authUser ? '#bbf7d0' : 'transparent',
+                }}
+              >
+                <User size={19} />
+                {authUser && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: '4px',
+                      right: '4px',
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      backgroundColor: '#22c55e',
+                    }}
+                  />
+                )}
+              </button>
+
+              {/* User Dropdown Menu */}
+              {isUserMenuOpen && authUser && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 8px)',
+                    right: 0,
+                    width: '240px',
+                    backgroundColor: '#ffffff',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+                    padding: '12px',
+                    zIndex: 200,
+                  }}
+                >
+                  <div style={{ paddingBottom: '10px', borderBottom: '1px solid #f1f5f9', marginBottom: '8px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Signed in as</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {authUser.email}
+                    </div>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        marginTop: '4px',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        backgroundColor: authUser.role === 'ADMIN' ? '#e6fffa' : '#f1f5f9',
+                        color: authUser.role === 'ADMIN' ? '#0d9488' : '#475569',
+                      }}
+                    >
+                      {authUser.role}
+                    </span>
+                  </div>
+
+                  {authUser.role === 'ADMIN' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        handleNavClick('admin');
+                      }}
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: '8px 10px',
+                        backgroundColor: '#f8fafc',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '6px',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        color: '#0f172a',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      <ShieldCheck size={16} style={{ color: '#0d9488' }} />
+                      <span>Admin Management</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      localStorage.removeItem('evys_auth_token');
+                      localStorage.removeItem('evys_auth_user');
+                      setAuthUser(null);
+                      setIsUserMenuOpen(false);
+                      handleNavClick('home');
+                    }}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '8px 10px',
+                      backgroundColor: '#fff1f2',
+                      border: '1px solid #fecdd3',
+                      borderRadius: '6px',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      color: '#e11d48',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    <LogOut size={16} />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* Cart Button with Count Badge */}
             <button
