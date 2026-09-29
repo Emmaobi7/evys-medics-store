@@ -158,6 +158,21 @@ export const Header: React.FC<HeaderProps> = ({
             >
               Contact
             </a>
+
+            <a
+              href="#admin"
+              className={`nav-link ${activePage === 'admin' ? 'active' : ''}`}
+              onClick={(e) => {
+                e.preventDefault();
+                handleNavClick('admin');
+              }}
+              style={{
+                color: activePage === 'admin' ? 'var(--color-primary)' : 'inherit',
+                fontWeight: activePage === 'admin' ? 700 : 500
+              }}
+            >
+              Admin Portal
+            </a>
           </nav>
 
           {/* Right Header Actions (Search, Quick Order, Account, Cart, Mobile Toggle) */}

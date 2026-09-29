@@ -117,6 +117,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                   Delivery Information
                 </a>
               </li>
+              <li>
+                <a href="#admin" onClick={(e) => { e.preventDefault(); onNavigate('admin'); }}>
+                  Admin Portal
+                </a>
+              </li>
             </ul>
           </div>
 

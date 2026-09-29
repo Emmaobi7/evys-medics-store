@@ -7,9 +7,10 @@ import { loginUser } from '../api/client';
 interface AccountModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onNavigateToAdmin?: () => void;
 }
 
-export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) => {
+export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, onNavigateToAdmin }) => {
   const [tab, setTab] = useState<'login' | 'nhs'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,6 +35,9 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
       }
       showToast('Signed In', `Welcome back, ${res.user.email} (${res.user.role})`);
       onClose();
+      if (res.user.role === 'ADMIN' && onNavigateToAdmin) {
+        onNavigateToAdmin();
+      }
     } catch (err: any) {
       setErrorMessage(err.message || 'Invalid email or password. Please verify credentials.');
     } finally {

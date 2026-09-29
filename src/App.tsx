@@ -18,15 +18,17 @@ import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
 import { CheckoutMockModal } from './pages/CheckoutMockModal';
 import { PaystackCallbackPage } from './pages/PaystackCallbackPage';
+import { AdminPage } from './pages/AdminPage';
 
 import { Product } from './types';
 import { PRODUCTS } from './data/products';
 
 function AppContent() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'shop' | 'product' | 'cart' | 'about' | 'contact' | 'callback'>(() => {
+  const [currentPage, setCurrentPage] = useState<'home' | 'shop' | 'product' | 'cart' | 'about' | 'contact' | 'callback' | 'admin'>(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
       const search = window.location.search;
+      if (path === '/admin') return 'admin';
       if (path === '/checkout/callback' || search.includes('reference=') || search.includes('trxref=')) {
         return 'callback';
       }
@@ -146,6 +148,13 @@ function AppContent() {
             onNavigateCart={() => handleNavigate('cart')}
           />
         )}
+
+        {currentPage === 'admin' && (
+          <AdminPage
+            onNavigateHome={() => handleNavigate('home')}
+            onNavigateShop={() => handleNavigate('shop')}
+          />
+        )}
       </main>
 
       {/* 9. Comprehensive Footer */}
@@ -176,6 +185,7 @@ function AppContent() {
       <AccountModal
         isOpen={isAccountModalOpen}
         onClose={() => setIsAccountModalOpen(false)}
+        onNavigateToAdmin={() => handleNavigate('admin')}
       />
 
       <CheckoutMockModal

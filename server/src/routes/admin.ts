@@ -261,11 +261,25 @@ adminRouter.patch(
 
 /**
  * DELETE /api/v1/admin/products/:id
- * Archive / Deactivate a product
+ * Archive / Deactivate or permanently delete a product
  */
 adminRouter.delete('/products/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
+    const permanent = req.query.permanent === 'true';
+
+    if (permanent) {
+      const sql = `DELETE FROM products WHERE id = $1 RETURNING id, sku;`;
+      const result = await query(sql, [id]);
+      if (result.rows.length === 0) {
+        throw new AppError('Product not found', 404);
+      }
+      return res.json({
+        message: 'Product permanently removed',
+        product: result.rows[0],
+      });
+    }
+
     const sql = `
       UPDATE products
       SET is_active = FALSE, updated_at = NOW()
@@ -285,6 +299,23 @@ adminRouter.delete('/products/:id', async (req: Request, res: Response, next: Ne
     next(error);
   }
 });
+
+/**
+ * POST /api/v1/admin/products/purge-all
+ * Purge all products from the catalog (for uploading new custom catalog)
+ */
+adminRouter.post('/products/purge-all', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await query('DELETE FROM products RETURNING id;');
+    res.json({
+      message: `Successfully purged ${result.rowCount} products from the catalogue.`,
+      deletedCount: result.rowCount,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 
 // ==================== ADMIN ORDERS ====================
 

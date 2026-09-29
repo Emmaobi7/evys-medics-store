@@ -321,3 +321,134 @@ export async function fetchCurrentUser(token: string): Promise<{ user: AuthUser 
   });
 }
 
+// ----------------------------------------------------
+// Admin API Services
+// ----------------------------------------------------
+
+export interface AdminProduct {
+  id: string;
+  sku: string;
+  name: string;
+  slug: string;
+  category: string;
+  categoryName: string;
+  brand: string;
+  priceExVat: number;
+  compareAtPriceExVat?: number | null;
+  stockCount: number;
+  isActive: boolean;
+  isFeatured: boolean;
+  imageUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateProductPayload {
+  sku: string;
+  name: string;
+  slug: string;
+  categoryId: string;
+  subcategoryId?: string;
+  brand: string;
+  shortDescription?: string;
+  description?: string;
+  productType?: string;
+  priceExVat: number;
+  compareAtPriceExVat?: number;
+  vatRate?: number;
+  leadTime?: string;
+  stockCount?: number;
+  images?: string[];
+  specifications?: Array<{ name: string; value: string }>;
+  features?: string[];
+  isFeatured?: boolean;
+}
+
+export async function fetchAdminProducts(token: string): Promise<{ products: AdminProduct[] }> {
+  return apiFetch<{ products: AdminProduct[] }>('/admin/products', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function createAdminProduct(token: string, productData: CreateProductPayload): Promise<{ message: string; product: any }> {
+  return apiFetch<{ message: string; product: any }>('/admin/products', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(productData),
+  });
+}
+
+export async function updateAdminStock(token: string, productId: string, stockCount: number): Promise<{ message: string; stockCount: number }> {
+  return apiFetch<{ message: string; stockCount: number }>(`/admin/products/${productId}/stock`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ stockCount }),
+  });
+}
+
+export async function updateAdminPrice(token: string, productId: string, priceExVat: number, compareAtPriceExVat?: number | null): Promise<{ message: string; product: any }> {
+  return apiFetch<{ message: string; product: any }>(`/admin/products/${productId}/price`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ priceExVat, compareAtPriceExVat }),
+  });
+}
+
+export async function deleteAdminProduct(token: string, productId: string, permanent: boolean = false): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(`/admin/products/${productId}${permanent ? '?permanent=true' : ''}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function purgeAllProducts(token: string): Promise<{ message: string; deletedCount: number }> {
+  return apiFetch<{ message: string; deletedCount: number }>('/admin/products/purge-all', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export interface AdminOrder {
+  id: string;
+  orderNumber: string;
+  status: string;
+  paymentStatus: string;
+  paymentMethod: string;
+  customerName: string;
+  customerEmail: string;
+  clinicName?: string;
+  poNumber?: string;
+  subtotal: number;
+  deliveryFee: number;
+  totalAmount: number;
+  grandTotalIncVat: number;
+  currency: string;
+  itemCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function fetchAdminOrders(token: string, status?: string): Promise<{ orders: AdminOrder[] }> {
+  const query = status ? `?status=${encodeURIComponent(status)}` : '';
+  return apiFetch<{ orders: AdminOrder[] }>(`/admin/orders${query}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function updateAdminOrderDelivery(token: string, orderId: string, deliveryFee: number): Promise<{ message: string; order: any }> {
+  return apiFetch<{ message: string; order: any }>(`/admin/orders/${orderId}/delivery`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ deliveryFee }),
+  });
+}
+
+export async function updateAdminOrderStatus(token: string, orderId: string, status?: string, paymentStatus?: string): Promise<{ message: string; order: any }> {
+  return apiFetch<{ message: string; order: any }>(`/admin/orders/${orderId}/status`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ status, paymentStatus }),
+  });
+}
+
+
