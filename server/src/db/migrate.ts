@@ -17,7 +17,20 @@ export async function runMigrations() {
     
     await client.query(`SET search_path TO ${config.dbSchema}, public;`);
     await client.query(`ALTER TABLE IF EXISTS orders ADD COLUMN IF NOT EXISTS idempotency_key VARCHAR(128) UNIQUE;`);
+    await client.query(`ALTER TABLE IF EXISTS orders ADD COLUMN IF NOT EXISTS stock_restored BOOLEAN NOT NULL DEFAULT FALSE;`);
+    await client.query(`ALTER TABLE IF EXISTS orders ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ;`);
     await client.query(sql);
+
+    // Run migration files in migrations directory if present
+    const migrationsDir = path.resolve(__dirname, 'migrations');
+    if (fs.existsSync(migrationsDir)) {
+      const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort();
+      for (const file of files) {
+        console.log(`[DB Migration] Running migration ${file}...`);
+        const migSql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
+        await client.query(migSql);
+      }
+    }
     console.log('[DB Migration] Schema created/verified successfully.');
   } catch (err: any) {
     console.error('[DB Migration Error]:', err.message);

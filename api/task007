@@ -1,0 +1,340 @@
+We have completed the NGN + Paystack commerce implementation.
+
+Before adding any more features or moving toward production, perform a focused PAYMENT SAFETY AUDIT.
+
+Do NOT redesign the UI.
+Do NOT add another payment provider.
+Do NOT add multi-currency.
+Do NOT add tax logic.
+Do NOT add new business features.
+
+The goal is to verify that the existing implementation is actually safe under real payment conditions.
+
+## 1. AUDIT ALL PAYSTACK SECRETS
+
+Search the entire repository and Git-tracked files for:
+
+* PAYSTACK_SECRET_KEY
+* PAYSTACK_PUBLIC_KEY
+* sk_test_
+* sk_live_
+* pk_test_
+* pk_live_
+* PAYSTACK
+
+Verify:
+
+* No real secret key exists in source code.
+* No secret key exists in frontend source.
+* No `VITE_PAYSTACK_SECRET_KEY` exists.
+* `.env` is gitignored.
+* `.env.example` contains placeholders only.
+* No secret appears in Git history from this implementation.
+* No secret appears in build output.
+
+If any actual secret credential is found, DO NOT print it in the report.
+
+Report only that a secret was found and where it must be rotated/removed.
+
+The values currently shown in `.env.example` such as:
+
+PAYSTACK_SECRET_KEY=sk_test_mock_paystack_secret_key_evys_2026
+
+must be treated strictly as placeholders.
+
+Do not turn them into real credentials.
+
+## 2. AUDIT THE ORDER → PAYMENT FLOW
+
+Trace the complete implementation:
+
+Customer
+→ POST /orders
+→ stock deduction
+→ pending order
+→ POST /payments/initialize
+→ Paystack
+→ callback
+→ server verification
+→ payment paid
+→ order confirmed
+
+Verify exactly when stock is deducted.
+
+Then answer:
+
+### What happens when the customer:
+
+A. Creates an order but never initializes payment?
+
+B. Initializes Paystack but closes the browser?
+
+C. Goes to Paystack and abandons payment?
+
+D. Payment fails?
+
+E. Payment succeeds but the browser never returns to the site?
+
+F. Paystack webhook arrives after the browser is closed?
+
+G. Customer retries payment for the same order?
+
+Do not guess. Inspect the actual code.
+
+## 3. STOCK / ABANDONED PAYMENT SAFETY
+
+This is important.
+
+The existing order system deducts stock transactionally when an order is created.
+
+Determine whether an unpaid order permanently consumes inventory.
+
+If yes, determine whether the current system has any mechanism for:
+
+* payment expiry
+* order expiry
+* stock restoration
+* cancellation
+* retrying payment
+
+If there is NO mechanism, implement the minimum safe mechanism needed.
+
+Preferred behavior:
+
+* pending/unpaid orders should not permanently consume stock forever
+* successful payment must preserve the stock deduction
+* failed/expired/cancelled orders should release reserved stock exactly once
+* stock restoration must be idempotent
+* payment confirmation must never restore stock after successful payment
+
+Do not build a complex reservation engine.
+
+Use the smallest robust implementation compatible with the existing schema.
+
+If the existing design already safely handles this, do not change it.
+
+## 4. PAYMENT RETRY
+
+Inspect what happens if:
+
+1. Order exists with payment pending.
+2. Customer clicks Pay again.
+3. A second Paystack transaction is initialized.
+
+Ensure the system does not accidentally create multiple conflicting paid states.
+
+Determine whether one order can have:
+
+* multiple payment attempts
+* one successful payment
+* previous failed attempts
+
+If multiple attempts are supported, make sure only one successful payment can finalize the order.
+
+A duplicate successful payment callback/webhook must be idempotent.
+
+## 5. WEBHOOK VS CALLBACK
+
+Verify that both paths behave correctly:
+
+### Browser callback
+
+Customer returns from Paystack:
+
+```text
+GET /payments/verify/:reference
+```
+
+### Webhook
+
+Paystack independently calls:
+
+```text
+POST /payments/webhook
+```
+
+The webhook must remain capable of completing payment if:
+
+* customer closes browser
+* callback never happens
+* frontend crashes
+* network fails after Paystack payment
+
+Neither callback nor webhook should double-process the payment.
+
+## 6. PAYMENT AMOUNT INTEGRITY
+
+Verify that the amount sent to Paystack is derived ONLY from the authoritative server order.
+
+Test:
+
+* client sends manipulated amount
+* client sends manipulated currency
+* client sends manipulated delivery fee
+* client sends manipulated product price
+
+None should influence the Paystack amount.
+
+Verify:
+
+```text
+Paystack amount in kobo
+==
+server authoritative order total in kobo
+```
+
+Verify:
+
+```text
+currency === NGN
+```
+
+## 7. DELIVERY + PAYMENT EDGE CASE
+
+Test this exact scenario:
+
+1. Order created.
+2. Delivery fee = ₦0.
+3. Payment not yet completed.
+4. Admin changes delivery fee to ₦X.
+5. Customer initializes payment.
+6. Paystack amount must equal:
+
+subtotal + ₦X
+
+Then test:
+
+1. Payment initialized.
+2. Order amount = ₦X.
+3. Admin attempts to change delivery fee.
+4. System must prevent changing the financial amount associated with that payment attempt.
+
+Do not allow a Paystack payment to be verified against a changed order total.
+
+## 8. WEBHOOK SECURITY
+
+Inspect the actual Express middleware ordering.
+
+The webhook signature must be calculated against the RAW request body.
+
+Verify:
+
+```text
+HMAC SHA512(rawBody, PAYSTACK_SECRET_KEY)
+```
+
+matches:
+
+```text
+x-paystack-signature
+```
+
+before processing the event.
+
+Test:
+
+* valid signature
+* invalid signature
+* missing signature
+* modified payload
+* duplicate event
+
+Do not log the secret key.
+
+Do not log sensitive payment credentials.
+
+## 9. DATABASE CONSTRAINTS
+
+Inspect the payment schema.
+
+Ensure appropriate uniqueness for:
+
+* provider reference
+* successful payment per order where necessary
+
+Check for race conditions where:
+
+* callback and webhook arrive simultaneously
+* two webhook deliveries happen simultaneously
+* two payment verifications happen simultaneously
+
+The final state must remain consistent.
+
+## 10. PRODUCTION ENVIRONMENT SAFETY
+
+Inspect:
+
+* `.gitignore`
+* `.env.example`
+* Git-tracked files
+* Vite build output
+* server configuration
+
+Confirm that:
+
+```text
+PAYSTACK_SECRET_KEY
+```
+
+can only exist server-side.
+
+The frontend may use the Paystack public key if the implementation actually needs it, but the current redirect-based flow should not require exposing unnecessary secrets.
+
+Do not commit production credentials.
+
+## 11. TESTS
+
+Add or update tests for the edge cases discovered above.
+
+At minimum:
+
+* abandoned order
+* failed payment
+* duplicate payment verification
+* duplicate webhook
+* callback + webhook race
+* payment retry
+* wrong amount
+* wrong currency
+* delivery changed before payment
+* delivery change after payment initialization
+* stock restoration if applicable
+* stock cannot be restored twice
+* successful payment cannot accidentally restore stock
+
+Then run:
+
+```bash
+npx tsc -p tsconfig.server.json --noEmit
+npx tsc --noEmit
+npm run test:all
+npm run build
+```
+
+## 12. FINAL REPORT
+
+Report:
+
+1. Whether any real Paystack secrets were found.
+2. Whether `.env` is tracked by Git.
+3. Exactly when stock is deducted.
+4. What happens to stock on abandoned/failed payment.
+5. How payment retries work.
+6. How callback and webhook interact.
+7. How duplicate payment events are handled.
+8. Whether delivery changes can invalidate payment amounts.
+9. Tests added.
+10. Final test/build results.
+11. Any remaining production risks.
+
+IMPORTANT:
+
+Do NOT deploy.
+
+Do NOT add real Paystack credentials.
+
+Do NOT expose any secret values in the report.
+
+Do NOT redesign unrelated parts of the application.
+
+Stop after the safety audit and fixes.

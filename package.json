@@ -16,7 +16,8 @@
     "test:orders": "tsx server/src/tests/orderFlow.test.ts",
     "test:paystack": "tsx server/src/tests/paystack.test.ts",
     "test:delivery": "tsx server/src/tests/delivery.test.ts",
-    "test:all": "tsx server/src/tests/auth.test.ts && tsx server/src/tests/orderFlow.test.ts && tsx server/src/tests/paystack.test.ts && tsx server/src/tests/delivery.test.ts"
+    "test:safety": "tsx server/src/tests/safetyAudit.test.ts",
+    "test:all": "tsx server/src/tests/auth.test.ts && tsx server/src/tests/orderFlow.test.ts && tsx server/src/tests/paystack.test.ts && tsx server/src/tests/delivery.test.ts && tsx server/src/tests/safetyAudit.test.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

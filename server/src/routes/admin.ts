@@ -4,6 +4,7 @@ import { getClient, query } from '../db/connection';
 import { validate } from '../middleware/validate';
 import { requireAuth, requireAdmin } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
+import { cancelOrderAndRestoreStock } from '../services/orderService';
 
 export const adminRouter = Router();
 
@@ -402,6 +403,17 @@ adminRouter.patch(
         order.id,
       ]);
 
+      // Invalidate any uncompleted pending payment attempts so old amounts cannot be verified
+      await query(
+        `
+        UPDATE payments
+        SET status = 'cancelled',
+            updated_at = NOW()
+        WHERE order_id = $1 AND status = 'pending';
+        `,
+        [order.id]
+      );
+
       const updated = result.rows[0];
 
       res.json({
@@ -427,7 +439,7 @@ adminRouter.patch(
 
 /**
  * PATCH /api/v1/admin/orders/:id/status
- * Update order status or payment status
+ * Update order status or payment status with automatic stock restoration on cancellation
  */
 const updateOrderStatusSchema = z.object({
   body: z.object({
@@ -443,6 +455,16 @@ adminRouter.patch(
     try {
       const { id } = req.params;
       const { status, paymentStatus } = req.body;
+
+      // If cancelling order, perform safe transaction cancellation with stock restoration
+      if (status === 'cancelled') {
+        const orderId = Array.isArray(id) ? id[0] : id;
+        const cancelResult = await cancelOrderAndRestoreStock(orderId, 'Admin cancelled order');
+        return res.json({
+          message: 'Order status updated to cancelled and stock restored successfully',
+          order: cancelResult,
+        });
+      }
 
       const updates: string[] = ['updated_at = NOW()'];
       const params: any[] = [];

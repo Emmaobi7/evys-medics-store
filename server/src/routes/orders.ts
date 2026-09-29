@@ -5,6 +5,7 @@ import { validate } from '../middleware/validate';
 import { AppError } from '../middleware/errorHandler';
 import { config } from '../config/env';
 import { addMoney, multiplyMoney } from '../utils/money';
+import { cancelOrderAndRestoreStock } from '../services/orderService';
 
 export const ordersRouter = Router();
 
@@ -386,3 +387,20 @@ ordersRouter.get('/:id', async (req: Request, res: Response, next: NextFunction)
     next(error);
   }
 });
+
+/**
+ * POST /api/v1/orders/:id/cancel
+ * Safely cancel an unpaid pending order and release deducted inventory
+ */
+ordersRouter.post('/:id/cancel', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const reason = req.body?.reason || 'Customer cancelled order / abandoned payment';
+    const orderId = Array.isArray(id) ? id[0] : id;
+    const result = await cancelOrderAndRestoreStock(orderId, typeof reason === 'string' ? reason : 'Customer cancelled order');
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+

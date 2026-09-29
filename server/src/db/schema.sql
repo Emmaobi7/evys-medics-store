@@ -97,6 +97,8 @@ CREATE TABLE IF NOT EXISTS orders (
   grand_total_inc_vat NUMERIC(12, 2) NOT NULL CHECK (grand_total_inc_vat >= 0),
   currency VARCHAR(8) DEFAULT 'NGN',
   idempotency_key VARCHAR(128) UNIQUE,
+  stock_restored BOOLEAN NOT NULL DEFAULT FALSE,
+  expires_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

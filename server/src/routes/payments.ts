@@ -38,7 +38,11 @@ paymentsRouter.post(
 
       const order = orderRes.rows[0];
 
-      // 2. Validate payment state
+      // 2. Validate order and payment state
+      if (order.status === 'cancelled') {
+        throw new AppError('Cannot initialize payment for an order that has been cancelled.', 400);
+      }
+
       if (order.payment_status === 'paid') {
         throw new AppError('This order has already been successfully paid.', 400);
       }
@@ -124,32 +128,48 @@ paymentsRouter.get('/verify/:reference', async (req: Request, res: Response, nex
       throw new AppError('Payment reference is required.', 400);
     }
 
-    // 1. Fetch payment record
+    await client.query('BEGIN');
+
+    // 1. Fetch payment record with row-level lock
     const payRes = await client.query<any>(
-      'SELECT * FROM payments WHERE provider_reference = $1 LIMIT 1;',
+      'SELECT * FROM payments WHERE provider_reference = $1 FOR UPDATE;',
       [reference]
     );
 
     if (payRes.rows.length === 0) {
+      await client.query('ROLLBACK');
       throw new AppError(`Payment with reference "${reference}" not found.`, 404);
     }
 
     const payment = payRes.rows[0];
 
-    // 2. Fetch authoritative order
+    // 2. Fetch authoritative order with row-level lock
     const orderRes = await client.query<any>(
-      'SELECT * FROM orders WHERE id = $1 LIMIT 1;',
+      'SELECT * FROM orders WHERE id = $1 FOR UPDATE;',
       [payment.order_id]
     );
 
     if (orderRes.rows.length === 0) {
+      await client.query('ROLLBACK');
       throw new AppError('Associated order not found for payment.', 404);
     }
 
     const order = orderRes.rows[0];
 
-    // 3. If already marked as paid in DB, return idempotent success
+    // 3. Security checks for cancelled states
+    if (order.status === 'cancelled') {
+      await client.query('ROLLBACK');
+      throw new AppError('Cannot verify payment for an order that has been cancelled.', 400);
+    }
+
+    if (payment.status === 'cancelled') {
+      await client.query('ROLLBACK');
+      throw new AppError('This payment attempt was cancelled or superseded by an updated delivery fee.', 400);
+    }
+
+    // 4. If already marked as paid in DB, return idempotent success
     if (payment.status === 'paid' && order.payment_status === 'paid') {
+      await client.query('COMMIT');
       return res.status(200).json({
         success: true,
         message: 'Payment has already been verified and processed.',
@@ -165,21 +185,23 @@ paymentsRouter.get('/verify/:reference', async (req: Request, res: Response, nex
     const expectedTotal = parseFloat(order.grand_total_inc_vat);
     const expectedKobo = toMinorUnits(expectedTotal, order.currency || 'NGN');
 
-    // 4. Verify transaction with Paystack API
+    // 5. Verify transaction with Paystack API
     const verifyResult = await paystackService.verifyTransaction(reference, expectedKobo);
 
     if (!verifyResult.status || !verifyResult.data) {
+      await client.query('ROLLBACK');
       throw new AppError('Payment verification failed on provider.', 400);
     }
 
     const txData = verifyResult.data;
 
-    // 5. Strict Security Assertions
+    // 6. Strict Security Assertions
     if (txData.status !== 'success') {
       await client.query('UPDATE payments SET status = $1, updated_at = NOW() WHERE id = $2;', [
         txData.status === 'abandoned' ? 'cancelled' : 'failed',
         payment.id,
       ]);
+      await client.query('COMMIT');
       throw new AppError(`Payment was not successful. Provider status: ${txData.status}`, 400);
     }
 
@@ -189,6 +211,7 @@ paymentsRouter.get('/verify/:reference', async (req: Request, res: Response, nex
         'failed',
         payment.id,
       ]);
+      await client.query('COMMIT');
       throw new AppError(
         `Payment amount mismatch! Expected ${expectedKobo} kobo, received ${txData.amount} kobo.`,
         400
@@ -201,15 +224,14 @@ paymentsRouter.get('/verify/:reference', async (req: Request, res: Response, nex
         'failed',
         payment.id,
       ]);
+      await client.query('COMMIT');
       throw new AppError(
         `Payment currency mismatch! Expected ${order.currency}, received ${txData.currency}.`,
         400
       );
     }
 
-    // 6. Update payment and order atomically
-    await client.query('BEGIN');
-
+    // 7. Update payment and order atomically
     await client.query(
       `
       UPDATE payments
@@ -222,7 +244,9 @@ paymentsRouter.get('/verify/:reference', async (req: Request, res: Response, nex
     await client.query(
       `
       UPDATE orders
-      SET payment_status = 'paid', updated_at = NOW()
+      SET payment_status = 'paid',
+          status = CASE WHEN status = 'pending' THEN 'confirmed' ELSE status END,
+          updated_at = NOW()
       WHERE id = $1;
       `,
       [order.id]
@@ -250,14 +274,15 @@ paymentsRouter.get('/verify/:reference', async (req: Request, res: Response, nex
 
 /**
  * POST /api/v1/payments/webhook
- * Paystack Webhook endpoint with HMAC SHA512 signature validation and idempotent processing
+ * Paystack Webhook endpoint with HMAC SHA512 signature validation and idempotent row-locking processing
  */
 paymentsRouter.post('/webhook', async (req: Request, res: Response, next: NextFunction) => {
+  const client = await getClient();
   try {
     const signature = req.headers['x-paystack-signature'] as string | undefined;
     const rawBody = (req as any).rawBody || JSON.stringify(req.body);
 
-    // 1. Verify Paystack HMAC SHA512 signature
+    // 1. Verify Paystack HMAC SHA512 signature against raw body
     const isValid = paystackService.verifyWebhookSignature(signature, rawBody);
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid Paystack webhook signature.' });
@@ -271,26 +296,35 @@ paymentsRouter.post('/webhook', async (req: Request, res: Response, next: NextFu
       const currency = data?.currency;
 
       if (reference) {
-        const payRes = await query<any>(
-          'SELECT * FROM payments WHERE provider_reference = $1 LIMIT 1;',
+        await client.query('BEGIN');
+
+        // Lock payment row
+        const payRes = await client.query<any>(
+          'SELECT * FROM payments WHERE provider_reference = $1 FOR UPDATE;',
           [reference]
         );
 
         if (payRes.rows.length > 0) {
           const payment = payRes.rows[0];
-          const orderRes = await query<any>('SELECT * FROM orders WHERE id = $1 LIMIT 1;', [
-            payment.order_id,
-          ]);
+
+          // Lock order row
+          const orderRes = await client.query<any>(
+            'SELECT * FROM orders WHERE id = $1 FOR UPDATE;',
+            [payment.order_id]
+          );
 
           if (orderRes.rows.length > 0) {
             const order = orderRes.rows[0];
             const expectedKobo = toMinorUnits(parseFloat(order.grand_total_inc_vat), order.currency);
 
+            // Do not process webhook on cancelled orders or superseded payments
             if (
+              order.status !== 'cancelled' &&
+              payment.status !== 'cancelled' &&
               amountInKobo === expectedKobo &&
               currency?.toUpperCase() === (order.currency || 'NGN').toUpperCase()
             ) {
-              await query(
+              await client.query(
                 `
                 UPDATE payments
                 SET status = 'paid', verified_at = NOW(), updated_at = NOW(), payment_data = $1
@@ -299,10 +333,12 @@ paymentsRouter.post('/webhook', async (req: Request, res: Response, next: NextFu
                 [JSON.stringify(data), payment.id]
               );
 
-              await query(
+              await client.query(
                 `
                 UPDATE orders
-                SET payment_status = 'paid', updated_at = NOW()
+                SET payment_status = 'paid',
+                    status = CASE WHEN status = 'pending' THEN 'confirmed' ELSE status END,
+                    updated_at = NOW()
                 WHERE id = $1;
                 `,
                 [order.id]
@@ -310,12 +346,17 @@ paymentsRouter.post('/webhook', async (req: Request, res: Response, next: NextFu
             }
           }
         }
+
+        await client.query('COMMIT');
       }
     }
 
     // Always respond with 200 OK to acknowledge webhook receipt
     res.status(200).json({ status: true });
   } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
     next(error);
+  } finally {
+    client.release();
   }
 });
