@@ -289,3 +289,35 @@ export interface PaystackVerifyApiResponse {
 export async function verifyPaystackPayment(reference: string): Promise<PaystackVerifyApiResponse> {
   return apiFetch<PaystackVerifyApiResponse>(`/payments/verify/${encodeURIComponent(reference)}`);
 }
+
+// ----------------------------------------------------
+// Authentication API Services
+// ----------------------------------------------------
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  role: 'ADMIN' | 'CUSTOMER';
+}
+
+export interface AuthResponse {
+  message: string;
+  token: string;
+  user: AuthUser;
+}
+
+export async function loginUser(email: string, password: string): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export async function fetchCurrentUser(token: string): Promise<{ user: AuthUser }> {
+  return apiFetch<{ user: AuthUser }>('/auth/me', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+

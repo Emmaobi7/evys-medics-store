@@ -1,0 +1,517 @@
+We are now moving into the STOREFRONT COMPLETION PHASE for Evy’s Projects.
+
+IMPORTANT:
+The commerce/payment architecture is COMPLETE. Do not redesign, refactor, or replace the backend payment system unless you find an actual integration bug.
+
+Current backend capabilities already implemented:
+- NGN-only currency
+- Tax-inclusive product pricing
+- Admin-controlled delivery fee
+- Order creation
+- Paystack payment initialization
+- Paystack callback verification
+- Paystack webhook verification
+- Payment retries on the same order
+- Callback/webhook race protection
+- Stock reservation and restoration
+- Automatic unpaid-order expiry
+- Admin order management
+- 48/48 automated tests passing
+- TypeScript checks passing
+- Production build passing
+
+Your job now is to make the CUSTOMER-FACING STOREFRONT feel complete, polished, and production-ready.
+
+==================================================
+1. FIRST: AUDIT THE EXISTING FRONTEND
+==================================================
+
+Before changing anything, inspect the existing frontend thoroughly.
+
+Identify:
+- Home page
+- Shop/catalogue
+- Product cards
+- Product details
+- Search
+- Category filtering
+- Cart
+- Checkout
+- Account/customer areas
+- Order confirmation
+- Payment callback
+- Navigation/header
+- Footer
+- Mobile/responsive layouts
+- Existing loading states
+- Empty states
+- Error states
+
+Do NOT rebuild components that already work well.
+
+Preserve the established Evy’s Projects visual direction:
+
+"Established medical/laboratory supplier with years of business experience, but presented through a modern, polished website."
+
+The interface should feel:
+- professional
+- trustworthy
+- clean
+- premium
+- efficient
+- medical/laboratory focused
+- established rather than startup-ish
+- modern without being flashy
+
+==================================================
+2. COMPLETE THE STOREFRONT EXPERIENCE
+==================================================
+
+Make sure a customer can naturally move through:
+
+HOME
+↓
+SHOP
+↓
+CATEGORY / SEARCH
+↓
+PRODUCT DETAILS
+↓
+ADD TO CART
+↓
+CART
+↓
+CHECKOUT
+↓
+DELIVERY INFORMATION
+↓
+ORDER REVIEW
+↓
+PAYSTACK
+↓
+PAYMENT CALLBACK
+↓
+ORDER CONFIRMATION
+
+Every transition should feel intentional.
+
+No dead buttons.
+
+No fake navigation.
+
+No placeholder interactions where a real implemented interaction already exists.
+
+==================================================
+3. HOME PAGE
+==================================================
+
+Audit the homepage and improve only where necessary.
+
+It should immediately communicate:
+
+- Evy’s Projects
+- medical/laboratory supply
+- reliable product sourcing
+- professional service
+- broad product categories
+
+Include/retain appropriate sections such as:
+
+Hero
+→ Product/category discovery
+→ Featured categories
+→ Selected products
+→ Why choose Evy’s Projects
+→ Professional supplier messaging
+→ CTA into catalogue
+
+Do NOT invent:
+- years in business
+- certifications
+- registration numbers
+- addresses
+- phone numbers
+- customer counts
+- hospitals served
+- partner brands
+- awards
+- regulatory claims
+
+Use only information already present in the project.
+
+If information is unavailable, use neutral copy rather than fabricated claims.
+
+==================================================
+4. SHOP / CATALOGUE
+==================================================
+
+Make the catalogue feel like a real medical supplier storefront.
+
+Verify:
+
+- Product cards
+- Product image
+- Product name
+- Category
+- Price in NGN
+- Stock/availability where appropriate
+- Add to cart
+- Product details navigation
+
+Search should work.
+
+Category filtering should work.
+
+Empty search results should have a polished empty state.
+
+Loading states should be intentional.
+
+Errors should be understandable.
+
+Do not create fake product data beyond the existing seeded catalogue.
+
+The real client catalogue will be supplied later.
+
+==================================================
+5. PRODUCT DETAILS
+==================================================
+
+Audit the product detail page.
+
+It should clearly present:
+
+- Product image
+- Product name
+- Category
+- Price in ₦
+- Availability/stock where appropriate
+- Description
+- Quantity selector
+- Add to cart
+- Back/shop navigation
+
+Make the purchase action obvious without making the page look like a generic consumer ecommerce site.
+
+Medical/laboratory equipment should feel like professional procurement products.
+
+==================================================
+6. CART
+==================================================
+
+Audit the cart carefully.
+
+Verify:
+
+- quantity changes work
+- removing items works
+- subtotal is correct
+- delivery fee is clearly separated
+- total is correct
+- NGN formatting is consistent
+- empty cart state is polished
+- checkout button works
+- inventory/API validation is handled correctly
+
+IMPORTANT:
+
+The frontend must NOT calculate or invent tax.
+
+Product prices are already tax-inclusive.
+
+The checkout model is:
+
+Subtotal
++ Delivery Fee
+= Total
+
+==================================================
+7. CHECKOUT
+==================================================
+
+Make checkout feel production-ready.
+
+Collect only information actually required by the backend.
+
+Verify:
+
+- customer name
+- email
+- shipping address
+- city
+- postcode where applicable
+- order summary
+- delivery fee
+- total
+
+Before payment:
+
+Clearly show:
+
+Subtotal
+Delivery
+Total
+
+Do not show a separate VAT/tax calculation.
+
+Prevent duplicate submission.
+
+Show meaningful loading states.
+
+If the backend rejects the order because stock changed, show a useful message and allow the customer to correct the cart.
+
+==================================================
+8. PAYSTACK HANDOFF
+==================================================
+
+Do NOT change the Paystack architecture.
+
+Use the existing:
+
+POST /api/v1/payments/initialize
+
+and returned authorization URL.
+
+The customer should be redirected to Paystack naturally.
+
+Do not expose Paystack secret credentials.
+
+Do not add Stripe.
+
+Do not add another payment provider.
+
+==================================================
+9. PAYMENT CALLBACK
+==================================================
+
+Audit the existing callback page rather than rebuilding it.
+
+Verify:
+
+Successful payment:
+→ verified state
+→ order number
+→ total
+→ clear confirmation
+→ continue shopping
+
+Failed payment:
+→ clear explanation
+→ retry payment for SAME ORDER
+
+Abandoned payment:
+→ retry option
+
+Invalid reference:
+→ safe error state
+
+Network/verification failure:
+→ retry verification
+
+Browser refresh:
+→ remains idempotent
+
+Webhook already processed:
+→ callback still shows successful payment
+
+Do not claim payment success merely because Paystack redirected the browser.
+
+Backend verification remains authoritative.
+
+==================================================
+10. ORDER CONFIRMATION
+==================================================
+
+Create a polished confirmation experience.
+
+Show useful information such as:
+
+- success status
+- order number
+- amount paid
+- delivery information
+- what happens next
+- continue shopping
+
+Do not invent delivery timelines unless they already exist in the project.
+
+Avoid unnecessary account creation requirements.
+
+==================================================
+11. RESPONSIVE DESIGN
+==================================================
+
+Audit the entire customer journey on:
+
+- desktop
+- tablet
+- mobile
+
+Pay particular attention to:
+
+- header/navigation
+- product grids
+- product detail layout
+- cart
+- checkout
+- payment callback
+- buttons
+- modals
+- form fields
+- long product names
+- price formatting
+
+No horizontal overflow.
+
+No broken layouts.
+
+No tiny unusable controls.
+
+==================================================
+12. UI QUALITY PASS
+==================================================
+
+Do a final visual consistency pass.
+
+Check:
+
+- typography hierarchy
+- spacing
+- border radius
+- shadows
+- buttons
+- inputs
+- cards
+- icons
+- hover states
+- focus states
+- disabled states
+- loading states
+- error states
+- empty states
+
+Avoid excessive animation.
+
+Avoid generic SaaS styling.
+
+Avoid making it look like a template.
+
+The final result should feel like a serious medical/laboratory supplier.
+
+==================================================
+13. DATA & API INTEGRITY
+==================================================
+
+Verify that the frontend is actually using the backend APIs where appropriate.
+
+Do not silently fall back to fake/mock data when the real API is available.
+
+Check for:
+
+- stale hardcoded prices
+- stale product arrays
+- fake checkout totals
+- fake order creation
+- fake payment success
+- fake inventory
+- placeholder delivery fees
+
+Remove only genuinely obsolete mocks.
+
+Do not destroy useful seed catalogue data.
+
+==================================================
+14. ACCESSIBILITY
+==================================================
+
+Perform a practical accessibility pass:
+
+- buttons have meaningful labels
+- inputs have labels
+- keyboard navigation works
+- focus states exist
+- images have useful alt text
+- modal interactions can be closed
+- errors are visible
+- disabled states are clear
+
+Do not install a huge accessibility dependency just for this.
+
+==================================================
+15. PERFORMANCE
+==================================================
+
+Keep the existing stack.
+
+Do not add unnecessary dependencies.
+
+Look for obvious issues such as:
+
+- unnecessary API requests
+- duplicate requests
+- large unnecessary assets
+- repeated rendering caused by poor state management
+
+Do not prematurely optimize working code.
+
+==================================================
+16. TESTING
+==================================================
+
+After changes run:
+
+npx tsc --noEmit
+npm run build
+
+Also run the existing test suite:
+
+npm run test:all
+
+Do not modify existing tests merely to make them pass.
+
+If a frontend test setup already exists, add focused tests for any real checkout behavior that was missing.
+
+==================================================
+17. IMPORTANT BUSINESS CONSTRAINTS
+==================================================
+
+Do NOT:
+
+- redesign the backend payment architecture
+- add Stripe
+- add another payment gateway
+- add multi-currency UI
+- add automatic VAT/tax calculation
+- invent company information
+- invent certifications
+- invent addresses
+- invent phone numbers
+- invent testimonials
+- invent customer statistics
+- invent delivery promises
+- add WordPress
+- add unnecessary dependencies
+- replace the existing visual direction
+
+The actual client product catalogue will be supplied separately.
+
+==================================================
+18. FINAL REPORT
+==================================================
+
+When finished, report:
+
+1. What frontend areas were audited
+2. What was actually changed
+3. Any obsolete/mock functionality removed
+4. Checkout flow status
+5. Paystack callback status
+6. Responsive status
+7. Accessibility status
+8. TypeScript result
+9. Test result
+10. Build result
+11. Anything still dependent on client-provided content/configuration
+
+Do NOT make up results.
+
+This is a STOREFRONT POLISH + INTEGRATION phase, not another backend architecture exercise.

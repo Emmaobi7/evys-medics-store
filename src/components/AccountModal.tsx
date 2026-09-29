@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Building2, User, KeyRound, ArrowRight, FileText, CheckCircle2 } from 'lucide-react';
 import { Button } from './Button';
 import { useToast } from '../context/ToastContext';
+import { loginUser } from '../api/client';
 
 interface AccountModalProps {
   isOpen: boolean;
@@ -14,14 +15,30 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
   const [password, setPassword] = useState('');
   const [nhsTrust, setNhsTrust] = useState('');
   const [poNumber, setPoNumber] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { showToast } = useToast();
 
   if (!isOpen) return null;
 
-  const handleSubmitLogin = (e: React.FormEvent) => {
+  const handleSubmitLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    showToast('Signed In', `Welcome back, ${email || 'Practitioner'}`);
-    onClose();
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const res = await loginUser(email, password);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('evys_auth_token', res.token);
+        localStorage.setItem('evys_auth_user', JSON.stringify(res.user));
+      }
+      showToast('Signed In', `Welcome back, ${res.user.email} (${res.user.role})`);
+      onClose();
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Invalid email or password. Please verify credentials.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSubmitNHS = (e: React.FormEvent) => {
@@ -135,6 +152,22 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
           </button>
         </div>
 
+        {errorMessage && (
+          <div
+            style={{
+              padding: '10px 14px',
+              backgroundColor: 'var(--color-danger-bg, #FEF2F2)',
+              color: 'var(--color-danger, #DC2626)',
+              border: '1px solid #FECACA',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.8125rem',
+              marginBottom: '16px',
+            }}
+          >
+            {errorMessage}
+          </div>
+        )}
+
         {tab === 'login' ? (
           <form onSubmit={handleSubmitLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
@@ -177,7 +210,14 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
               />
             </div>
 
-            <Button variant="primary" size="lg" fullWidth type="submit" icon={<ArrowRight size={18} />}>
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              type="submit"
+              isLoading={isLoading}
+              icon={<ArrowRight size={18} />}
+            >
               Sign In to Medical Account
             </Button>
           </form>

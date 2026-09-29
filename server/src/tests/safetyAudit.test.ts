@@ -574,6 +574,10 @@ async function runSafetyAudit() {
   // TEST 9: Automatic Order Expiry Releases Reserved Stock for Overdue Orders
   // =========================================================================
   try {
+    const { expirePendingOrders } = await import('../services/orderService');
+    // Pre-clean any pre-existing expired orders from earlier tests
+    await expirePendingOrders();
+
     await query('UPDATE inventory SET stock_count = 50 WHERE product_id = $1;', [testProduct.id]);
 
     const createRes = await fetch(`${BASE_URL}/api/v1/orders`, {
@@ -595,7 +599,6 @@ async function runSafetyAudit() {
     // Simulate order past its expiry window
     await query("UPDATE orders SET expires_at = NOW() - INTERVAL '5 minutes' WHERE id = $1;", [orderId]);
 
-    const { expirePendingOrders } = await import('../services/orderService');
     const expiryResult = await expirePendingOrders();
 
     const stockAfterExpiry = (await query<any>('SELECT stock_count FROM inventory WHERE product_id = $1;', [testProduct.id])).rows[0].stock_count;
