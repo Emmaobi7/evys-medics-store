@@ -230,7 +230,7 @@ export const MegaMenu: React.FC<MegaMenuProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--color-ink)', fontWeight: 600 }}>
               <Truck size={15} style={{ color: 'var(--color-primary)' }} />
-              <span>Free Delivery on orders over £50</span>
+              <span>Reliable Clinical Supply Nationwide</span>
             </span>
             <span style={{ color: 'var(--color-border-dark)' }}>•</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>

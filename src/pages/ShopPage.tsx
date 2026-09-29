@@ -6,6 +6,7 @@ import { fetchProducts } from '../api/client';
 import { ProductGrid } from '../components/ProductGrid';
 import { Button } from '../components/Button';
 import { Product, FilterState } from '../types';
+import { formatNaira } from '../utils/money';
 
 interface ShopPageProps {
   initialCategory?: string;
@@ -477,10 +478,10 @@ export const ShopPage: React.FC<ShopPageProps> = ({
 
           {/* 3. Price */}
           <div className="sidebar-section">
-            <div className="sidebar-title">Price (ex. VAT)</div>
+            <div className="sidebar-title">Price Range</div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.875rem', fontWeight: 600, marginBottom: '8px' }}>
-              <span>£{filters.minPrice}</span>
-              <span>£{filters.maxPrice}</span>
+              <span>{formatNaira(filters.minPrice)}</span>
+              <span>{formatNaira(filters.maxPrice)}</span>
             </div>
             <input
               type="range"
@@ -759,7 +760,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
             {/* Price in mobile */}
             <div style={{ marginBottom: '24px' }}>
               <div style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '8px' }}>
-                Max Price: £{filters.maxPrice}
+                Max Price: {formatNaira(filters.maxPrice)}
               </div>
               <input
                 type="range"

@@ -310,21 +310,31 @@ adminRouter.get('/orders', async (req: Request, res: Response, next: NextFunctio
     const { rows } = await query(sql, params);
 
     res.json({
-      orders: rows.map((r) => ({
-        id: r.id,
-        orderNumber: r.order_number,
-        status: r.status,
-        paymentStatus: r.payment_status,
-        paymentMethod: r.payment_method,
-        customerName: r.customer_name,
-        customerEmail: r.customer_email,
-        clinicName: r.clinic_name,
-        poNumber: r.po_number,
-        grandTotalIncVat: parseFloat(r.grand_total_inc_vat),
-        itemCount: r.item_count,
-        createdAt: r.created_at,
-        updatedAt: r.updated_at,
-      })),
+      orders: rows.map((r) => {
+        const subtotal = parseFloat(r.subtotal_ex_vat || '0');
+        const deliveryFee = parseFloat(r.delivery_fee ?? r.shipping_ex_vat ?? '0');
+        const totalAmount = parseFloat(r.grand_total_inc_vat || '0');
+
+        return {
+          id: r.id,
+          orderNumber: r.order_number,
+          status: r.status,
+          paymentStatus: r.payment_status,
+          paymentMethod: r.payment_method,
+          customerName: r.customer_name,
+          customerEmail: r.customer_email,
+          clinicName: r.clinic_name,
+          poNumber: r.po_number,
+          subtotal,
+          deliveryFee,
+          totalAmount,
+          grandTotalIncVat: totalAmount,
+          currency: r.currency || 'NGN',
+          itemCount: r.item_count,
+          createdAt: r.created_at,
+          updatedAt: r.updated_at,
+        };
+      }),
     });
   } catch (error) {
     next(error);
@@ -332,13 +342,97 @@ adminRouter.get('/orders', async (req: Request, res: Response, next: NextFunctio
 });
 
 /**
+ * PATCH /api/v1/admin/orders/:id/delivery
+ * Admin-controlled delivery fee update
+ * Validates delivery fee, recalculates server-side total, and protects already paid orders
+ */
+const updateOrderDeliverySchema = z.object({
+  body: z.object({
+    deliveryFee: z.number().min(0, 'Delivery fee must be greater than or equal to 0'),
+  }),
+});
+
+adminRouter.patch(
+  '/orders/:id/delivery',
+  validate(updateOrderDeliverySchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const { deliveryFee } = req.body;
+
+      // 1. Fetch current order
+      const orderRes = await query<any>(
+        'SELECT * FROM orders WHERE id = $1 OR order_number = $1 LIMIT 1;',
+        [id]
+      );
+
+      if (orderRes.rows.length === 0) {
+        throw new AppError('Order not found', 404);
+      }
+
+      const order = orderRes.rows[0];
+
+      // 2. Security rule: Prevent modifying delivery fee on already paid orders
+      if (order.payment_status === 'paid') {
+        throw new AppError(
+          'Cannot modify delivery fee on an order that has already been successfully paid.',
+          400
+        );
+      }
+
+      // 3. Recalculate server-authoritative total
+      const subtotal = parseFloat(order.subtotal_ex_vat);
+      const newTotal = Math.round((subtotal + deliveryFee) * 100) / 100;
+
+      // 4. Update database
+      const updateSql = `
+        UPDATE orders
+        SET 
+          delivery_fee = $1,
+          shipping_ex_vat = $1,
+          grand_total_inc_vat = $2,
+          updated_at = NOW()
+        WHERE id = $3
+        RETURNING *;
+      `;
+
+      const result = await query(updateSql, [
+        deliveryFee.toFixed(2),
+        newTotal.toFixed(2),
+        order.id,
+      ]);
+
+      const updated = result.rows[0];
+
+      res.json({
+        message: 'Order delivery fee updated successfully',
+        order: {
+          id: updated.id,
+          orderNumber: updated.order_number,
+          status: updated.status,
+          paymentStatus: updated.payment_status,
+          subtotal: parseFloat(updated.subtotal_ex_vat),
+          deliveryFee: parseFloat(updated.delivery_fee),
+          total: parseFloat(updated.grand_total_inc_vat),
+          totalAmount: parseFloat(updated.grand_total_inc_vat),
+          currency: updated.currency || 'NGN',
+          updatedAt: updated.updated_at,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
  * PATCH /api/v1/admin/orders/:id/status
  * Update order status or payment status
  */
 const updateOrderStatusSchema = z.object({
   body: z.object({
-    status: z.enum(['pending', 'confirmed', 'processing', 'dispatched', 'delivered', 'cancelled']).optional(),
-    paymentStatus: z.enum(['pending', 'paid', 'invoice_pending', 'po_verified', 'failed']).optional(),
+    status: z.enum(['pending', 'confirmed', 'processing', 'ready', 'dispatched', 'delivered', 'cancelled']).optional(),
+    paymentStatus: z.enum(['pending', 'paid', 'failed', 'cancelled']).optional(),
   }),
 });
 

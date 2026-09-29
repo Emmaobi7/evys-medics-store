@@ -13,9 +13,15 @@ export const config = {
     .split(',')
     .map((o) => o.trim()),
   commerce: {
-    freeShippingThreshold: parseFloat(process.env.SHIPPING_FREE_THRESHOLD || '50.00'),
-    standardShippingRate: parseFloat(process.env.SHIPPING_STANDARD_RATE || '4.95'),
-    defaultVatRate: parseFloat(process.env.DEFAULT_VAT_RATE || '0.20'),
+    currency: 'NGN' as const,
+    defaultDeliveryFee: parseFloat(process.env.DEFAULT_DELIVERY_FEE || '0.00'),
+    freeShippingThreshold: parseFloat(process.env.SHIPPING_FREE_THRESHOLD || '0.00'),
+  },
+  paystack: {
+    secretKey: process.env.PAYSTACK_SECRET_KEY || 'sk_test_mock_paystack_secret_key_evys_2026',
+    publicKey: process.env.PAYSTACK_PUBLIC_KEY || 'pk_test_mock_paystack_public_key_evys_2026',
+    callbackUrl: process.env.PAYSTACK_CALLBACK_URL || 'http://localhost:5173/checkout/callback',
+    baseUrl: process.env.PAYSTACK_BASE_URL || 'https://api.paystack.co',
   },
   auth: {
     jwtSecret: process.env.JWT_SECRET || 'evys-dev-secret-key-change-in-production-min-32-chars',

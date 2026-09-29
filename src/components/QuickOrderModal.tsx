@@ -7,6 +7,7 @@ import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import { QuantitySelector } from './QuantitySelector';
 import { Button } from './Button';
+import { formatNaira } from '../utils/money';
 
 interface QuickOrderModalProps {
   isOpen: boolean;
@@ -486,7 +487,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
                             </span>
                             <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>{p.name}</span>
                           </div>
-                          <span style={{ fontWeight: 700, color: 'var(--color-ink)' }}>£{p.price.toFixed(2)}</span>
+                          <span style={{ fontWeight: 700, color: 'var(--color-ink)' }}>{formatNaira(p.price)}</span>
                         </div>
                       ))}
                     </div>
@@ -533,7 +534,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
                         </h4>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', fontSize: '0.8125rem' }}>
                           <span style={{ fontWeight: 800, color: 'var(--color-ink)' }}>
-                            £{selectedProduct.price.toFixed(2)} <span style={{ fontSize: '0.6875rem', fontWeight: 500, color: 'var(--color-muted)' }}>ex. VAT</span>
+                            {formatNaira(selectedProduct.price)}
                           </span>
                           <span style={{ color: 'var(--color-muted)' }}>•</span>
                           <span style={{ color: selectedProduct.inStock ? 'var(--color-success)' : 'var(--color-danger)', fontWeight: 600 }}>
@@ -565,7 +566,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
                           type="submit"
                           icon={<ShoppingBag size={18} />}
                         >
-                          Add to Basket • £{(selectedProduct.price * singleQuantity).toFixed(2)} ex. VAT
+                          Add to Basket • {formatNaira(selectedProduct.price * singleQuantity)}
                         </Button>
                       </div>
                     </div>
@@ -691,7 +692,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
                           {row.product.name}
                         </div>
                         <div style={{ fontSize: '0.6875rem', color: 'var(--color-success)', fontWeight: 600 }}>
-                          ✓ In stock • £{row.product.price.toFixed(2)} ex. VAT
+                          ✓ In stock • {formatNaira(row.product.price)}
                         </div>
                       </div>
                     ) : row.isInvalid ? (
@@ -729,7 +730,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
 
                   {/* Line Total */}
                   <div style={{ textAlign: 'right', fontWeight: 700, fontSize: '0.8125rem', color: 'var(--color-ink)' }}>
-                    {row.product ? `£${(row.product.price * row.quantity).toFixed(2)}` : '—'}
+                    {row.product ? formatNaira(row.product.price * row.quantity) : '—'}
                   </div>
 
                   {/* Remove Button */}
@@ -766,7 +767,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
               </Button>
 
               <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--color-ink)' }}>
-                Identified Lines Subtotal: <span style={{ color: 'var(--color-primary)' }}>£{multiSubtotalExVat.toFixed(2)}</span> ex. VAT
+                Identified Lines Subtotal: <span style={{ color: 'var(--color-primary)' }}>{formatNaira(multiSubtotalExVat)}</span>
               </div>
             </div>
 
@@ -778,7 +779,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
               icon={<ShoppingBag size={18} />}
               onClick={handleAddAllMultiToBasket}
             >
-              Add {validMultiItems.length} Item{validMultiItems.length === 1 ? '' : 's'} to Basket ({`£${multiSubtotalExVat.toFixed(2)} ex. VAT`})
+              Add {validMultiItems.length} Item{validMultiItems.length === 1 ? '' : 's'} to Basket ({formatNaira(multiSubtotalExVat)})
             </Button>
           </div>
         )}

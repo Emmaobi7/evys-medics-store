@@ -43,7 +43,7 @@ export interface Product {
   subcategory?: string;
   subcategoryName?: string;
   productType?: string;
-  price: number; // in GBP £
+  price: number; // in NGN ₦ (tax-inclusive final price)
   compareAtPrice?: number;
   rating: number; // 0 - 5
   reviewCount: number;

@@ -1,25 +1,30 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, CheckCircle2, ShieldCheck, Truck, Lock, ArrowRight, Building2, PackageCheck, AlertCircle } from 'lucide-react';
+import { X, ShieldCheck, Lock, ArrowRight, CreditCard, FileText, PackageCheck, AlertCircle, ExternalLink, RefreshCw } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { submitOrderToApi } from '../api/client';
+import { submitOrderToApi, initializePaystackPayment, verifyPaystackPayment } from '../api/client';
 import { Button } from '../components/Button';
+import { formatNaira } from '../utils/money';
 
-interface CheckoutMockModalProps {
+interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   onOrderCompleted: () => void;
 }
 
-export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
+export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
   isOpen,
   onClose,
   onOrderCompleted,
 }) => {
-  const { cart, subtotal, estimatedShipping, total, clearCart } = useCart();
-  const [step, setStep] = useState<'details' | 'confirmation'>('details');
+  const { cart, subtotal, deliveryFee, total, clearCart } = useCart();
+  const [step, setStep] = useState<'details' | 'paystack_processing' | 'confirmation'>('details');
   const [orderId, setOrderId] = useState('');
+  const [orderNumber, setOrderNumber] = useState('');
+  const [paystackReference, setPaystackReference] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [paystackAuthUrl, setPaystackAuthUrl] = useState<string | null>(null);
   const idempotencyKeyRef = useRef<string>('');
 
   // Generate a unique idempotency key when opening the modal
@@ -27,6 +32,7 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
     if (isOpen) {
       idempotencyKeyRef.current = `idem_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
       setErrorMessage(null);
+      setStep('details');
     }
   }, [isOpen]);
 
@@ -38,7 +44,7 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
     addressLine1: '',
     city: '',
     postcode: '',
-    paymentMethod: 'invoice', // invoice, card, nhs-po
+    paymentMethod: 'paystack' as 'paystack' | 'invoice' | 'nhs_po',
     poNumber: '',
   });
 
@@ -62,11 +68,11 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
       customerPhone: shippingDetails.phone,
       clinicName: shippingDetails.clinicName || undefined,
       poNumber: shippingDetails.poNumber || undefined,
-      paymentMethod: (shippingDetails.paymentMethod === 'nhs-po' ? 'nhs_po' : 'invoice') as 'invoice' | 'nhs_po',
+      paymentMethod: shippingDetails.paymentMethod,
       shippingAddressLine1: shippingDetails.addressLine1,
       shippingCity: shippingDetails.city,
       shippingPostcode: shippingDetails.postcode,
-      shippingCountry: 'United Kingdom',
+      shippingCountry: 'Nigeria',
       idempotencyKey: idempotencyKeyRef.current,
       items: cart.map((item) => ({
         productId: item.product.id,
@@ -75,24 +81,63 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
     };
 
     try {
+      // Step 1: Create pending order with server-authoritative pricing
       const res = await submitOrderToApi(orderPayload);
-      setOrderId(res.order.orderNumber);
-      setStep('confirmation');
-      clearCart();
-      onOrderCompleted();
+      setOrderId(res.order.id);
+      setOrderNumber(res.order.orderNumber);
+
+      if (shippingDetails.paymentMethod === 'paystack') {
+        // Step 2: Initialize Paystack payment
+        const paystackRes = await initializePaystackPayment(res.order.id);
+        setPaystackReference(paystackRes.reference);
+        setPaystackAuthUrl(paystackRes.authorizationUrl);
+        setStep('paystack_processing');
+
+        // Open Paystack authorization URL
+        if (paystackRes.authorizationUrl) {
+          window.open(paystackRes.authorizationUrl, '_blank', 'noopener,noreferrer');
+        }
+      } else {
+        // Institutional Invoice / PO
+        setStep('confirmation');
+        clearCart();
+        onOrderCompleted();
+      }
     } catch (err: any) {
-      console.error('[Checkout] API order submission error:', err);
-      // Display genuine error to the customer without clearing cart or creating fake success
+      console.error('[Checkout] Order error:', err);
       setErrorMessage(
-        err.message || 'Unable to complete order dispatch. Please verify stock availability and your delivery details.'
+        err.message || 'Unable to complete order. Please verify stock availability and your delivery details.'
       );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const vat = subtotal * 0.2;
-  const grandTotal = subtotal + estimatedShipping + vat;
+  /**
+   * Verifies Paystack transaction with backend
+   */
+  const handleVerifyPayment = async () => {
+    if (!paystackReference || isVerifying) return;
+
+    setIsVerifying(true);
+    setErrorMessage(null);
+
+    try {
+      const verifyRes = await verifyPaystackPayment(paystackReference);
+      if (verifyRes.success && verifyRes.status === 'paid') {
+        setStep('confirmation');
+        clearCart();
+        onOrderCompleted();
+      } else {
+        setErrorMessage('Payment verification pending or not confirmed yet. Please try again.');
+      }
+    } catch (err: any) {
+      console.error('[Paystack Verification Error]:', err);
+      setErrorMessage(err.message || 'Unable to verify payment with provider. Please retry.');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   return (
     <div
@@ -132,16 +177,16 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
           <X size={20} />
         </button>
 
-        {step === 'details' ? (
+        {step === 'details' && (
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-primary)', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '6px' }}>
-              <Lock size={15} /> 256-BIT ENCRYPTED CLINICAL ORDER PORTAL
+              <Lock size={15} /> 256-BIT SECURE ENCRYPTED CHECKOUT
             </div>
             <h2 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '6px' }}>
               Delivery &amp; Practice Information
             </h2>
             <p style={{ fontSize: '0.875rem', color: 'var(--color-muted)', marginBottom: '20px' }}>
-              Complete shipping details for medical supply dispatch.
+              Tax-inclusive pricing. Complete shipping details for medical supply dispatch.
             </p>
 
             {errorMessage && (
@@ -176,7 +221,7 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
                   <input
                     type="text"
                     required
-                    placeholder="e.g. St. Jude Healthcare Centre"
+                    placeholder="e.g. Apex Health Clinic & Lab"
                     value={shippingDetails.clinicName}
                     onChange={(e) => setShippingDetails({ ...shippingDetails, clinicName: e.target.value })}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
@@ -189,7 +234,7 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
                   <input
                     type="text"
                     required
-                    placeholder="Dr. John Smith"
+                    placeholder="Dr. Eleanor Vance"
                     value={shippingDetails.contactName}
                     onChange={(e) => setShippingDetails({ ...shippingDetails, contactName: e.target.value })}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
@@ -200,12 +245,12 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
               <div className="form-row-2col">
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Email Address (for Dispatch &amp; VAT Receipt) *
+                    Email Address (for Dispatch &amp; Receipt) *
                   </label>
                   <input
                     type="email"
                     required
-                    placeholder="j.smith@clinic.com"
+                    placeholder="e.vance@clinic.com"
                     value={shippingDetails.email}
                     onChange={(e) => setShippingDetails({ ...shippingDetails, email: e.target.value })}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
@@ -218,7 +263,7 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
                   <input
                     type="tel"
                     required
-                    placeholder="e.g. +234 ... / Telephone"
+                    placeholder="e.g. +234 800 000 0000"
                     value={shippingDetails.phone}
                     onChange={(e) => setShippingDetails({ ...shippingDetails, phone: e.target.value })}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
@@ -234,7 +279,7 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
                 <input
                   type="text"
                   required
-                  placeholder="Street Address, Building, Floor/Room"
+                  placeholder="Street Address, Building, Suite / Lab Room"
                   value={shippingDetails.addressLine1}
                   onChange={(e) => setShippingDetails({ ...shippingDetails, addressLine1: e.target.value })}
                   style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', marginBottom: '12px', boxSizing: 'border-box' }}
@@ -243,7 +288,7 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
                   <input
                     type="text"
                     required
-                    placeholder="Town / City"
+                    placeholder="City / State"
                     value={shippingDetails.city}
                     onChange={(e) => setShippingDetails({ ...shippingDetails, city: e.target.value })}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
@@ -259,22 +304,51 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
                 </div>
               </div>
 
-              {/* Settlement method */}
+              {/* Payment Method Selection */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '8px' }}>
-                  Billing &amp; Settlement Preference
+                  Payment &amp; Settlement Method
                 </label>
-                <div className="form-row-2col">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <label
                     style={{
-                      border: '1px solid var(--color-border)',
+                      border: `1.5px solid ${shippingDetails.paymentMethod === 'paystack' ? 'var(--color-primary)' : 'var(--color-border)'}`,
                       borderRadius: 'var(--radius-md)',
-                      padding: '12px',
+                      padding: '14px',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '8px',
+                      gap: '12px',
+                      cursor: 'pointer',
+                      backgroundColor: shippingDetails.paymentMethod === 'paystack' ? 'var(--color-primary-light)' : 'var(--color-white)',
+                      transition: 'all var(--transition-fast)',
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      checked={shippingDetails.paymentMethod === 'paystack'}
+                      onChange={() => setShippingDetails({ ...shippingDetails, paymentMethod: 'paystack' })}
+                    />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                      <CreditCard size={18} style={{ color: 'var(--color-primary)' }} />
+                      <div>
+                        <div style={{ fontSize: '0.875rem', fontWeight: 700 }}>Paystack (Cards, Bank Transfer, USSD)</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>Instant secure online settlement in NGN (₦)</div>
+                      </div>
+                    </div>
+                  </label>
+
+                  <label
+                    style={{
+                      border: `1.5px solid ${shippingDetails.paymentMethod === 'invoice' ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                      borderRadius: 'var(--radius-md)',
+                      padding: '14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
                       cursor: 'pointer',
                       backgroundColor: shippingDetails.paymentMethod === 'invoice' ? 'var(--color-primary-light)' : 'var(--color-white)',
+                      transition: 'all var(--transition-fast)',
                     }}
                   >
                     <input
@@ -283,48 +357,32 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
                       checked={shippingDetails.paymentMethod === 'invoice'}
                       onChange={() => setShippingDetails({ ...shippingDetails, paymentMethod: 'invoice' })}
                     />
-                    <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>30-Day Clinical Invoice</span>
-                  </label>
-                  <label
-                    style={{
-                      border: '1px solid var(--color-border)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      cursor: 'pointer',
-                      backgroundColor: shippingDetails.paymentMethod === 'nhs-po' ? 'var(--color-primary-light)' : 'var(--color-white)',
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      checked={shippingDetails.paymentMethod === 'nhs-po'}
-                      onChange={() => setShippingDetails({ ...shippingDetails, paymentMethod: 'nhs-po' })}
-                    />
-                    <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Purchase Order / Institutional PO</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                      <FileText size={18} style={{ color: 'var(--color-primary)' }} />
+                      <div>
+                        <div style={{ fontSize: '0.875rem', fontWeight: 700 }}>Institutional / 30-Day Clinical Invoice</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>For verified clinics, practices, and laboratories</div>
+                      </div>
+                    </div>
                   </label>
                 </div>
               </div>
 
-              {/* Order total review */}
+              {/* Order summary review */}
               <div style={{ backgroundColor: 'var(--color-bg)', padding: '16px 20px', borderRadius: 'var(--radius-lg)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '6px' }}>
-                  <span>Items Subtotal (ex. VAT)</span>
-                  <span style={{ fontWeight: 600 }}>£{subtotal.toFixed(2)}</span>
+                  <span>Items Subtotal</span>
+                  <span style={{ fontWeight: 600 }}>{formatNaira(subtotal)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '6px' }}>
-                  <span>Delivery</span>
-                  <span style={{ fontWeight: 600 }}>{estimatedShipping === 0 ? 'FREE' : `£${estimatedShipping.toFixed(2)}`}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '6px' }}>
-                  <span>VAT (20%)</span>
-                  <span style={{ fontWeight: 600 }}>£{vat.toFixed(2)}</span>
+                  <span>Delivery Charge</span>
+                  <span style={{ fontWeight: 600 }}>
+                    {deliveryFee === 0 ? 'Confirmed at Dispatch' : formatNaira(deliveryFee)}
+                  </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.125rem', fontWeight: 800, borderTop: '1px dashed var(--color-border)', paddingTop: '8px', marginTop: '8px' }}>
-                  <span>Grand Total (inc. VAT)</span>
-                  <span style={{ color: 'var(--color-primary)' }}>£{grandTotal.toFixed(2)}</span>
+                  <span>Total (Tax-Inclusive)</span>
+                  <span style={{ color: 'var(--color-primary)' }}>{formatNaira(total)}</span>
                 </div>
               </div>
 
@@ -336,12 +394,127 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
                 isLoading={isSubmitting}
                 icon={<ArrowRight size={18} />}
               >
-                Place Order (£{grandTotal.toFixed(2)})
+                {shippingDetails.paymentMethod === 'paystack'
+                  ? `Pay with Paystack (${formatNaira(total)})`
+                  : `Submit Purchase Order (${formatNaira(total)})`}
               </Button>
             </form>
           </div>
-        ) : (
-          /* Confirmation Screen */
+        )}
+
+        {step === 'paystack_processing' && (
+          <div style={{ textAlign: 'center', padding: '24px 16px' }}>
+            <div
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--color-primary-light)',
+                color: 'var(--color-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px auto',
+              }}
+            >
+              <CreditCard size={32} />
+            </div>
+
+            <h2 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '8px' }}>
+              Complete Payment on Paystack
+            </h2>
+            <p style={{ color: 'var(--color-muted)', marginBottom: '24px', maxWidth: '480px', margin: '0 auto 24px auto' }}>
+              Your secure Paystack transaction has been initialized for <strong>{formatNaira(total)}</strong>.
+            </p>
+
+            {errorMessage && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  backgroundColor: 'var(--color-danger-bg, #FEF2F2)',
+                  color: 'var(--color-danger, #DC2626)',
+                  border: '1px solid #FECACA',
+                  padding: '12px 16px',
+                  borderRadius: 'var(--radius-md)',
+                  marginBottom: '20px',
+                  fontSize: '0.875rem',
+                  textAlign: 'left',
+                }}
+              >
+                <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>{errorMessage}</div>
+              </div>
+            )}
+
+            <div
+              style={{
+                backgroundColor: 'var(--color-bg)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '20px',
+                maxWidth: '440px',
+                margin: '0 auto 28px auto',
+                textAlign: 'left',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ color: 'var(--color-muted)', fontSize: '0.8125rem' }}>Order Number:</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{orderNumber}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ color: 'var(--color-muted)', fontSize: '0.8125rem' }}>Paystack Reference:</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', fontWeight: 600 }}>{paystackReference}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--color-muted)', fontSize: '0.8125rem' }}>Amount:</span>
+                <span style={{ fontWeight: 700, color: 'var(--color-primary)' }}>{formatNaira(total)}</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '360px', margin: '0 auto' }}>
+              {paystackAuthUrl && (
+                <a
+                  href={paystackAuthUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-secondary btn-lg"
+                  style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                >
+                  <ExternalLink size={16} /> Open Paystack Window
+                </a>
+              )}
+
+              <Button
+                variant="primary"
+                size="lg"
+                fullWidth
+                isLoading={isVerifying}
+                onClick={handleVerifyPayment}
+                icon={<RefreshCw size={16} />}
+              >
+                I Have Completed Payment
+              </Button>
+
+              <button
+                type="button"
+                onClick={() => setStep('details')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--color-muted)',
+                  fontSize: '0.875rem',
+                  cursor: 'pointer',
+                  marginTop: '8px',
+                }}
+              >
+                ← Back to Order Details
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 'confirmation' && (
           <div style={{ textAlign: 'center', padding: '24px 16px' }}>
             <div
               style={{
@@ -360,11 +533,11 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
             </div>
 
             <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--color-success)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
-              Order Confirmed
+              Order Confirmed &amp; Verified
             </div>
             <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '8px' }}>Thank You For Your Order</h2>
             <p style={{ color: 'var(--color-muted)', marginBottom: '20px' }}>
-              Your order has been queued for warehouse picking and quality inspection.
+              Your order has been recorded and queued for warehouse picking and dispatch.
             </p>
 
             <div
@@ -379,15 +552,19 @@ export const CheckoutMockModal: React.FC<CheckoutMockModalProps> = ({
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={{ color: 'var(--color-muted)', fontSize: '0.8125rem' }}>Order Reference:</span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{orderId}</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{orderNumber || orderId}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={{ color: 'var(--color-muted)', fontSize: '0.8125rem' }}>Delivery To:</span>
-                <span style={{ fontWeight: 600 }}>{shippingDetails.contactName} ({shippingDetails.postcode})</span>
+                <span style={{ fontWeight: 600 }}>{shippingDetails.contactName} ({shippingDetails.city})</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ color: 'var(--color-muted)', fontSize: '0.8125rem' }}>Total Settled:</span>
+                <span style={{ fontWeight: 700, color: 'var(--color-primary)' }}>{formatNaira(total)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: 'var(--color-muted)', fontSize: '0.8125rem' }}>Dispatch Estimate:</span>
-                <span style={{ fontWeight: 600, color: 'var(--color-success)' }}>Within 24 Hours</span>
+                <span style={{ fontWeight: 600, color: 'var(--color-success)' }}>Standard Courier Dispatch</span>
               </div>
             </div>
 

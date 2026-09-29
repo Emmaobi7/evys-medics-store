@@ -5,6 +5,7 @@ import { useToast } from '../context/ToastContext';
 import { QuantitySelector } from '../components/QuantitySelector';
 import { Button } from '../components/Button';
 import { Product } from '../types';
+import { formatNaira } from '../utils/money';
 
 interface CartPageProps {
   onNavigateToCheckout: () => void;
@@ -26,8 +27,6 @@ export const CartPage: React.FC<CartPageProps> = ({
     clearCart,
     subtotal,
     estimatedShipping,
-    freeShippingThreshold,
-    shippingRemaining,
     totalItems,
   } = useCart();
 
@@ -48,8 +47,7 @@ export const CartPage: React.FC<CartPageProps> = ({
   };
 
   const discountedSubtotal = Math.max(0, subtotal - appliedDiscount);
-  const vatAmount = discountedSubtotal * 0.2;
-  const grandTotal = discountedSubtotal + estimatedShipping + vatAmount;
+  const grandTotal = discountedSubtotal + estimatedShipping;
 
   if (cart.length === 0) {
     return (
@@ -144,9 +142,7 @@ export const CartPage: React.FC<CartPageProps> = ({
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {cart.map((item) => {
-              const lineTotalEx = item.product.price * item.quantity;
-              const lineTotalInc = lineTotalEx * 1.2;
-              const unitInc = item.product.price * 1.2;
+              const lineTotal = item.product.price * item.quantity;
 
               return (
                 <div
@@ -187,7 +183,7 @@ export const CartPage: React.FC<CartPageProps> = ({
                         {item.product.name}
                       </h3>
                       <div style={{ fontSize: '0.75rem', color: 'var(--color-muted)', marginTop: '2px' }}>
-                        SKU: <strong style={{ fontFamily: 'var(--font-mono)' }}>{item.product.sku}</strong> • £{item.product.price.toFixed(2)} ex. VAT (£{unitInc.toFixed(2)} inc. VAT)
+                        SKU: <strong style={{ fontFamily: 'var(--font-mono)' }}>{item.product.sku}</strong> • {formatNaira(item.product.price)}
                       </div>
                     </div>
                   </div>
@@ -204,10 +200,7 @@ export const CartPage: React.FC<CartPageProps> = ({
 
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontWeight: 700, fontSize: '0.9375rem', color: 'var(--color-ink)' }}>
-                        £{lineTotalEx.toFixed(2)} <span style={{ fontSize: '0.6875rem', fontWeight: 500, color: 'var(--color-muted)' }}>ex. VAT</span>
-                      </div>
-                      <div style={{ fontSize: '0.6875rem', color: 'var(--color-muted)' }}>
-                        £{lineTotalInc.toFixed(2)} inc. VAT
+                        {formatNaira(lineTotal)}
                       </div>
                     </div>
 
@@ -266,32 +259,22 @@ export const CartPage: React.FC<CartPageProps> = ({
         >
           <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '16px' }}>Order Summary</h2>
 
-          {/* Free delivery progress */}
+          {/* Delivery Note */}
           <div
             style={{
               padding: '10px 14px',
               backgroundColor: 'var(--color-accent-subtle)',
               borderRadius: 'var(--radius-md)',
               marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '0.75rem',
+              color: 'var(--color-primary)',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-primary)', marginBottom: '4px' }}>
-              <Truck size={14} />
-              {shippingRemaining > 0 ? (
-                <span>Add £{shippingRemaining.toFixed(2)} more for Free Delivery</span>
-              ) : (
-                <span style={{ color: 'var(--color-success)' }}>Free Delivery Applied!</span>
-              )}
-            </div>
-            <div style={{ width: '100%', height: '6px', backgroundColor: 'rgba(8, 126, 139, 0.15)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
-              <div
-                style={{
-                  width: `${Math.min(100, (subtotal / freeShippingThreshold) * 100)}%`,
-                  height: '100%',
-                  backgroundColor: shippingRemaining === 0 ? 'var(--color-success)' : 'var(--color-primary)',
-                }}
-              />
-            </div>
+            <Truck size={16} />
+            <span>Delivery fee is calculated at checkout or confirmed by admin.</span>
           </div>
 
           {/* Promo Code Form */}
@@ -322,27 +305,22 @@ export const CartPage: React.FC<CartPageProps> = ({
           {/* Summary Breakdown */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: 'var(--color-muted)' }}>
-              <span>Subtotal (ex. VAT)</span>
-              <span style={{ fontWeight: 600, color: 'var(--color-ink)' }}>£{subtotal.toFixed(2)}</span>
+              <span>Subtotal</span>
+              <span style={{ fontWeight: 600, color: 'var(--color-ink)' }}>{formatNaira(subtotal)}</span>
             </div>
 
             {appliedDiscount > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: 'var(--color-success)' }}>
                 <span>Discount</span>
-                <span style={{ fontWeight: 600 }}>-£{appliedDiscount.toFixed(2)}</span>
+                <span style={{ fontWeight: 600 }}>-{formatNaira(appliedDiscount)}</span>
               </div>
             )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: 'var(--color-muted)' }}>
               <span>Delivery</span>
               <span style={{ fontWeight: 600, color: 'var(--color-ink)' }}>
-                {estimatedShipping === 0 ? 'FREE' : `£${estimatedShipping.toFixed(2)}`}
+                {estimatedShipping === 0 ? 'Admin / Standard (₦0.00)' : formatNaira(estimatedShipping)}
               </span>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: 'var(--color-muted)' }}>
-              <span>VAT (20%)</span>
-              <span style={{ fontWeight: 600, color: 'var(--color-ink)' }}>£{vatAmount.toFixed(2)}</span>
             </div>
 
             <div
@@ -357,7 +335,7 @@ export const CartPage: React.FC<CartPageProps> = ({
               }}
             >
               <span>Total Payable</span>
-              <span>£{grandTotal.toFixed(2)}</span>
+              <span>{formatNaira(grandTotal)}</span>
             </div>
           </div>
 
@@ -375,3 +353,4 @@ export const CartPage: React.FC<CartPageProps> = ({
     </div>
   );
 };
+

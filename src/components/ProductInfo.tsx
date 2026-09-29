@@ -5,6 +5,7 @@ import { QuantitySelector } from './QuantitySelector';
 import { Button } from './Button';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
+import { formatNaira } from '../utils/money';
 
 interface ProductInfoProps {
   product: Product;
@@ -37,9 +38,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({ product, onBuyNow }) =
     onBuyNow(product, quantity);
   };
 
-  const incVatPrice = (product.price * 1.2).toFixed(2);
-  const lineTotalExVat = (product.price * quantity).toFixed(2);
-  const lineTotalIncVat = (product.price * quantity * 1.2).toFixed(2);
+  const lineTotal = product.price * quantity;
 
   return (
     <div className="pdp-details-wrap">
@@ -86,10 +85,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({ product, onBuyNow }) =
       {/* Price Box */}
       <div className="pdp-price-box" style={{ padding: '16px 20px', marginBottom: '20px' }}>
         <div>
-          <span className="pdp-price" style={{ fontSize: '1.875rem' }}>£{product.price.toFixed(2)}</span>
-          <span style={{ fontSize: '0.875rem', color: 'var(--color-muted)', marginLeft: '6px' }}>
-            ex. VAT
-          </span>
+          <span className="pdp-price" style={{ fontSize: '1.875rem' }}>{formatNaira(product.price)}</span>
         </div>
         {product.compareAtPrice && (
           <span
@@ -99,15 +95,15 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({ product, onBuyNow }) =
               textDecoration: 'line-through',
             }}
           >
-            £{product.compareAtPrice.toFixed(2)}
+            {formatNaira(product.compareAtPrice)}
           </span>
         )}
         <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
           <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-ink)' }}>
-            £{incVatPrice} inc. VAT
+            Final Price (Tax-Inclusive)
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>
-            Unit price
+            Per unit
           </div>
         </div>
       </div>
@@ -172,7 +168,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({ product, onBuyNow }) =
                 ? 'Product Unavailable'
                 : isJustAdded
                 ? `Added ${quantity} to Basket!`
-                : `Add to Basket • £${lineTotalExVat}`}
+                : `Add to Basket • ${formatNaira(lineTotal)}`}
             </Button>
           </div>
         </div>
@@ -180,7 +176,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({ product, onBuyNow }) =
         {product.inStock && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8125rem', color: 'var(--color-muted)', padding: '0 4px' }}>
             <span>Total for {quantity} unit{quantity > 1 ? 's' : ''}:</span>
-            <span><strong>£{lineTotalExVat}</strong> ex. VAT (<strong>£{lineTotalIncVat}</strong> inc. VAT)</span>
+            <span><strong>{formatNaira(lineTotal)}</strong></span>
           </div>
         )}
 
@@ -211,8 +207,9 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({ product, onBuyNow }) =
         }}
       >
         <Truck size={16} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
-        <span>Reliable delivery &amp; dispatch. Free delivery on qualifying orders over £50 ex. VAT.</span>
+        <span>Reliable delivery &amp; dispatch nationwide. Admin-coordinated shipping.</span>
       </div>
     </div>
   );
 };
+

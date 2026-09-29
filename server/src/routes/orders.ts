@@ -4,6 +4,7 @@ import { getClient, query } from '../db/connection';
 import { validate } from '../middleware/validate';
 import { AppError } from '../middleware/errorHandler';
 import { config } from '../config/env';
+import { addMoney, multiplyMoney } from '../utils/money';
 
 export const ordersRouter = Router();
 
@@ -14,11 +15,11 @@ const createOrderSchema = z.object({
     customerPhone: z.string().trim().min(6, 'Valid telephone is required').max(32, 'Phone too long'),
     clinicName: z.string().trim().max(128).optional(),
     poNumber: z.string().trim().max(64).optional(),
-    paymentMethod: z.enum(['invoice', 'nhs_po', 'card', 'bacs']).default('invoice'),
+    paymentMethod: z.enum(['paystack', 'card', 'bank_transfer', 'invoice', 'nhs_po']).default('paystack'),
     shippingAddressLine1: z.string().trim().min(3, 'Address is required').max(255),
     shippingCity: z.string().trim().min(2, 'City is required').max(128),
-    shippingPostcode: z.string().trim().min(3, 'Postcode is required').max(32),
-    shippingCountry: z.string().trim().max(64).default('United Kingdom'),
+    shippingPostcode: z.string().trim().min(2, 'Postal code is required').max(32),
+    shippingCountry: z.string().trim().max(64).default('Nigeria'),
     idempotencyKey: z.string().trim().max(128).optional(),
     items: z.array(
       z.object({
@@ -45,26 +46,35 @@ function generateOrderNumber(): string {
 /**
  * Helper to format order database row to standard API response
  */
-function formatOrderRow(orderRow: any, itemCount?: number) {
+export function formatOrderRow(orderRow: any, itemCount?: number) {
+  const subtotal = parseFloat(orderRow.subtotal_ex_vat || '0');
+  const deliveryFee = parseFloat(orderRow.delivery_fee ?? orderRow.shipping_ex_vat ?? '0');
+  const total = parseFloat(orderRow.grand_total_inc_vat || '0');
+
   return {
     id: orderRow.id,
     orderNumber: orderRow.order_number,
     status: orderRow.status,
     paymentStatus: orderRow.payment_status,
     paymentMethod: orderRow.payment_method,
-    subtotalExVat: parseFloat(orderRow.subtotal_ex_vat),
-    shippingExVat: parseFloat(orderRow.shipping_ex_vat),
-    vatTotal: parseFloat(orderRow.vat_total),
-    grandTotalIncVat: parseFloat(orderRow.grand_total_inc_vat),
-    currency: orderRow.currency,
+    subtotal,
+    subtotalExVat: subtotal,
+    deliveryFee,
+    shippingExVat: deliveryFee,
+    vatTotal: 0.00,
+    total,
+    totalAmount: total,
+    grandTotalIncVat: total,
+    currency: orderRow.currency || 'NGN',
     createdAt: orderRow.created_at,
+    updatedAt: orderRow.updated_at,
     itemCount: itemCount !== undefined ? itemCount : undefined,
   };
 }
 
 /**
  * POST /api/v1/orders
- * Transaction-safe order creation with authoritative inventory, pricing, and snapshots
+ * Transaction-safe order creation with authoritative inventory, tax-inclusive pricing, and snapshots
  */
 ordersRouter.post(
   '/',
@@ -130,7 +140,7 @@ ordersRouter.post(
 
       // Fetch active product definitions
       const productQuery = `
-        SELECT id, sku, name, price_ex_vat, vat_rate, is_active
+        SELECT id, sku, name, price_ex_vat, is_active
         FROM products
         WHERE id = ANY($1);
       `;
@@ -147,8 +157,7 @@ ordersRouter.post(
 
       // Validate all items exist, are active, and have sufficient stock
       const orderLines: any[] = [];
-      let subtotalExVat = 0;
-      let totalVat = 0;
+      let subtotal = 0;
 
       for (const item of items) {
         const prod = productMap.get(item.productId);
@@ -164,40 +173,38 @@ ordersRouter.post(
           );
         }
 
-        const unitPriceExVat = parseFloat(prod.price_ex_vat);
-        const vatRate = parseFloat(prod.vat_rate || '0.20');
-        const lineTotalExVat = unitPriceExVat * item.quantity;
-        const lineVat = lineTotalExVat * vatRate;
-
-        subtotalExVat += lineTotalExVat;
-        totalVat += lineVat;
+        // Tax-inclusive authoritative product price
+        const unitPrice = parseFloat(prod.price_ex_vat);
+        const lineTotal = multiplyMoney(unitPrice, item.quantity);
+        subtotal = addMoney(subtotal, lineTotal);
 
         orderLines.push({
           productId: prod.id,
           skuSnapshot: prod.sku,
           productNameSnapshot: prod.name,
-          unitPriceExVat,
+          unitPrice,
           quantity: item.quantity,
-          vatRate,
-          lineTotalExVat,
+          vatRate: 0.00,
+          lineTotal,
           trackInventory: prod.track_inventory,
         });
       }
 
-      // Calculate authoritative shipping
-      const freeThreshold = config.commerce.freeShippingThreshold;
-      const shippingExVat = subtotalExVat >= freeThreshold ? 0.00 : config.commerce.standardShippingRate;
-      const grandTotalIncVat = subtotalExVat + shippingExVat + totalVat;
+      // Initial admin-controlled delivery fee (default: 0.00 or configured default)
+      const deliveryFee = config.commerce.defaultDeliveryFee || 0.00;
+      const totalAmount = addMoney(subtotal, deliveryFee);
 
       const orderId = `ord_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
       const orderNumber = generateOrderNumber();
 
-      // Initial payment status based on chosen method
-      const paymentStatus = paymentMethod === 'nhs_po'
-        ? 'po_verified'
-        : paymentMethod === 'invoice'
-        ? 'invoice_pending'
+      // Initial payment status
+      const paymentStatus = paymentMethod === 'invoice'
+        ? 'pending'
+        : paymentMethod === 'nhs_po'
+        ? 'pending'
         : 'pending';
+
+      const currency = config.commerce.currency || 'NGN';
 
       // Insert Order with idempotency key
       const insertOrderSql = `
@@ -205,10 +212,10 @@ ordersRouter.post(
           id, order_number, status, payment_status, payment_method,
           customer_name, customer_email, customer_phone, clinic_name, po_number,
           shipping_address_line1, shipping_city, shipping_postcode, shipping_country,
-          subtotal_ex_vat, shipping_ex_vat, vat_total, grand_total_inc_vat, currency,
+          subtotal_ex_vat, shipping_ex_vat, delivery_fee, vat_total, grand_total_inc_vat, currency,
           idempotency_key
         )
-        VALUES ($1, $2, 'confirmed', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 'GBP', $18)
+        VALUES ($1, $2, 'pending', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $15, 0.00, $16, $17, $18)
         RETURNING *;
       `;
 
@@ -225,11 +232,11 @@ ordersRouter.post(
         shippingAddressLine1,
         shippingCity,
         shippingPostcode,
-        shippingCountry || 'United Kingdom',
-        subtotalExVat.toFixed(2),
-        shippingExVat.toFixed(2),
-        totalVat.toFixed(2),
-        grandTotalIncVat.toFixed(2),
+        shippingCountry || 'Nigeria',
+        subtotal.toFixed(2),
+        deliveryFee.toFixed(2),
+        totalAmount.toFixed(2),
+        currency,
         idempotencyKey || null,
       ]);
 
@@ -248,10 +255,10 @@ ordersRouter.post(
             line.productId,
             line.skuSnapshot,
             line.productNameSnapshot,
-            line.unitPriceExVat,
+            line.unitPrice.toFixed(2),
             line.quantity,
-            line.vatRate,
-            line.lineTotalExVat.toFixed(2),
+            0.00,
+            line.lineTotal.toFixed(2),
           ]
         );
 
@@ -319,6 +326,10 @@ ordersRouter.get('/:id', async (req: Request, res: Response, next: NextFunction)
     `;
     const itemsRes = await query(itemsSql, [order.id]);
 
+    const subtotal = parseFloat(order.subtotal_ex_vat);
+    const deliveryFee = parseFloat(order.delivery_fee ?? order.shipping_ex_vat ?? '0');
+    const totalAmount = parseFloat(order.grand_total_inc_vat);
+
     res.json({
       order: {
         id: order.id,
@@ -326,6 +337,11 @@ ordersRouter.get('/:id', async (req: Request, res: Response, next: NextFunction)
         status: order.status,
         paymentStatus: order.payment_status,
         paymentMethod: order.payment_method,
+        currency: order.currency || 'NGN',
+        subtotal,
+        deliveryFee,
+        totalAmount,
+        total: totalAmount,
         customer: {
           name: order.customer_name,
           email: order.customer_email,
@@ -340,20 +356,26 @@ ordersRouter.get('/:id', async (req: Request, res: Response, next: NextFunction)
           country: order.shipping_country,
         },
         financials: {
-          subtotalExVat: parseFloat(order.subtotal_ex_vat),
-          shippingExVat: parseFloat(order.shipping_ex_vat),
-          vatTotal: parseFloat(order.vat_total),
-          grandTotalIncVat: parseFloat(order.grand_total_inc_vat),
-          currency: order.currency,
+          subtotal,
+          deliveryFee,
+          total: totalAmount,
+          currency: order.currency || 'NGN',
+          // Backward compatibility fields
+          subtotalExVat: subtotal,
+          shippingExVat: deliveryFee,
+          vatTotal: 0.00,
+          grandTotalIncVat: totalAmount,
         },
         items: itemsRes.rows.map((item) => ({
           id: item.id,
           productId: item.product_id,
           sku: item.sku_snapshot,
           name: item.product_name_snapshot,
+          unitPrice: parseFloat(item.unit_price_ex_vat),
           unitPriceExVat: parseFloat(item.unit_price_ex_vat),
           quantity: item.quantity,
-          vatRate: parseFloat(item.vat_rate),
+          vatRate: 0.00,
+          lineTotal: parseFloat(item.line_total_ex_vat),
           lineTotalExVat: parseFloat(item.line_total_ex_vat),
         })),
         createdAt: order.created_at,

@@ -60,12 +60,14 @@ export interface CartValidationResultItem {
   productId: string;
   sku: string;
   name: string;
+  unitPrice: number;
   unitPriceExVat: number;
   requestedQuantity: number;
   validatedQuantity: number;
   availableStock: number;
   isAvailable: boolean;
   vatRate: number;
+  lineTotal: number;
   lineTotalExVat: number;
   lineVatTotal: number;
   lineTotalIncVat: number;
@@ -78,7 +80,7 @@ export interface CreateOrderInput {
   customerPhone: string;
   clinicName?: string;
   poNumber?: string;
-  paymentMethod: 'invoice' | 'nhs_po' | 'card' | 'bacs';
+  paymentMethod: 'paystack' | 'card' | 'bank_transfer' | 'invoice' | 'nhs_po';
   shippingAddressLine1: string;
   shippingCity: string;
   shippingPostcode: string;
@@ -87,4 +89,18 @@ export interface CreateOrderInput {
     productId: string;
     quantity: number;
   }>;
+}
+
+export interface DbPayment {
+  id: string;
+  order_id: string;
+  provider: 'paystack';
+  provider_reference: string;
+  amount: string | number;
+  currency: string;
+  status: 'pending' | 'paid' | 'failed' | 'cancelled';
+  payment_data: any;
+  created_at: string;
+  updated_at: string;
+  verified_at: string | null;
 }

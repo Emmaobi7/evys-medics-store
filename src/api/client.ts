@@ -175,6 +175,7 @@ export interface CartValidationResponse {
     sku: string;
     name: string;
     imageUrl?: string;
+    unitPrice: number;
     unitPriceExVat: number;
     requestedQuantity: number;
     validatedQuantity: number;
@@ -182,10 +183,14 @@ export interface CartValidationResponse {
     isAvailable: boolean;
     hasSufficientStock: boolean;
     vatRate: number;
+    lineTotal: number;
     lineTotalExVat: number;
     lineVatTotal: number;
     lineTotalIncVat: number;
   }>;
+  subtotal: number;
+  deliveryFee: number;
+  total: number;
   subtotalExVat: number;
   shippingExVat: number;
   vatTotal: number;
@@ -208,7 +213,7 @@ export interface CreateOrderPayload {
   customerPhone: string;
   clinicName?: string;
   poNumber?: string;
-  paymentMethod: 'invoice' | 'nhs_po' | 'card' | 'bacs';
+  paymentMethod: 'paystack' | 'card' | 'bank_transfer' | 'invoice' | 'nhs_po';
   shippingAddressLine1: string;
   shippingCity: string;
   shippingPostcode: string;
@@ -227,13 +232,17 @@ export interface CreateOrderResponse {
     orderNumber: string;
     status: string;
     paymentStatus: string;
+    paymentMethod: string;
+    subtotal: number;
+    deliveryFee: number;
+    total: number;
     subtotalExVat: number;
     shippingExVat: number;
     vatTotal: number;
     grandTotalIncVat: number;
     currency: string;
     createdAt: string;
-    itemCount: number;
+    itemCount?: number;
   };
 }
 
@@ -242,4 +251,41 @@ export async function submitOrderToApi(orderPayload: CreateOrderPayload): Promis
     method: 'POST',
     body: JSON.stringify(orderPayload),
   });
+}
+
+// ----------------------------------------------------
+// Paystack Payment API Services
+// ----------------------------------------------------
+
+export interface PaystackInitApiResponse {
+  message: string;
+  authorizationUrl: string;
+  accessCode: string;
+  reference: string;
+  orderId: string;
+  orderNumber: string;
+  amount: number;
+  currency: string;
+}
+
+export async function initializePaystackPayment(orderId: string, callbackUrl?: string): Promise<PaystackInitApiResponse> {
+  return apiFetch<PaystackInitApiResponse>('/payments/initialize', {
+    method: 'POST',
+    body: JSON.stringify({ orderId, callbackUrl }),
+  });
+}
+
+export interface PaystackVerifyApiResponse {
+  success: boolean;
+  message: string;
+  status: 'paid' | 'pending' | 'failed' | 'cancelled';
+  reference: string;
+  orderNumber: string;
+  amount: number;
+  currency: string;
+  verifiedAt?: string;
+}
+
+export async function verifyPaystackPayment(reference: string): Promise<PaystackVerifyApiResponse> {
+  return apiFetch<PaystackVerifyApiResponse>(`/payments/verify/${encodeURIComponent(reference)}`);
 }

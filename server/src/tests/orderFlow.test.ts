@@ -109,27 +109,30 @@ async function runTests() {
     });
   }
 
-  // --- Test 2: Correct order total generated server-side ---
+  // --- Test 2: Correct order total generated server-side (Tax-inclusive, NGN, no VAT) ---
   try {
     const unitPrice = parseFloat(testProduct1.price_ex_vat);
     const qty = 2;
     const expectedSubtotal = unitPrice * qty;
-    const expectedShipping = expectedSubtotal >= config.commerce.freeShippingThreshold ? 0 : config.commerce.standardShippingRate;
-    const expectedVat = expectedSubtotal * 0.20;
-    const expectedGrandTotal = expectedSubtotal + expectedShipping + expectedVat;
+    const expectedDelivery = 0;
+    const expectedGrandTotal = expectedSubtotal + expectedDelivery;
 
     const res = await fetch(`${BASE_URL}/api/v1/orders/${createdOrderId}`);
     const data = (await res.json()) as any;
 
-    const diff = Math.abs((data.order?.financials?.grandTotalIncVat || 0) - expectedGrandTotal);
-    const passed = res.status === 200 && diff < 0.05;
+    const totalCalculated = Number(data.order?.financials?.total ?? data.order?.financials?.grandTotalIncVat ?? 0);
+    const vatCalculated = Number(data.order?.financials?.vatTotal ?? 0);
+    const currency = data.order?.currency;
+    const diff = Math.abs(totalCalculated - expectedGrandTotal);
+
+    const passed = res.status === 200 && diff < 0.05 && vatCalculated === 0 && currency === 'NGN';
 
     results.push({
-      name: '2. Correct order total generated server-side (Authoritative subtotal, VAT, shipping)',
+      name: '2. Correct order total generated server-side (Tax-inclusive, NGN currency, 0 VAT, Delivery fee)',
       passed,
       status: res.status,
       expectedStatus: 200,
-      details: `Expected: £${expectedGrandTotal.toFixed(2)} | Calculated: £${data.order?.financials?.grandTotalIncVat?.toFixed(2)}`,
+      details: `Expected: ₦${expectedGrandTotal.toFixed(2)} | Calculated: ₦${totalCalculated.toFixed(2)} | VAT: ₦${vatCalculated} | Currency: ${currency}`,
     });
   } catch (err: any) {
     results.push({

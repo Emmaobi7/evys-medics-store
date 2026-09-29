@@ -78,9 +78,9 @@ CREATE TABLE IF NOT EXISTS inventory (
 CREATE TABLE IF NOT EXISTS orders (
   id VARCHAR(64) PRIMARY KEY,
   order_number VARCHAR(64) UNIQUE NOT NULL,
-  status VARCHAR(32) NOT NULL DEFAULT 'pending', -- pending, confirmed, processing, dispatched, delivered, cancelled
-  payment_status VARCHAR(32) NOT NULL DEFAULT 'pending', -- pending, paid, invoice_pending, po_verified, failed
-  payment_method VARCHAR(32) NOT NULL DEFAULT 'invoice', -- invoice, nhs_po, card, bacs
+  status VARCHAR(32) NOT NULL DEFAULT 'pending', -- pending, confirmed, processing, ready, dispatched, delivered, cancelled
+  payment_status VARCHAR(32) NOT NULL DEFAULT 'pending', -- pending, paid, failed, cancelled
+  payment_method VARCHAR(32) NOT NULL DEFAULT 'paystack', -- paystack, card, bank_transfer, invoice
   customer_name VARCHAR(255) NOT NULL,
   customer_email VARCHAR(255) NOT NULL,
   customer_phone VARCHAR(64) NOT NULL,
@@ -89,12 +89,13 @@ CREATE TABLE IF NOT EXISTS orders (
   shipping_address_line1 TEXT NOT NULL,
   shipping_city VARCHAR(128) NOT NULL,
   shipping_postcode VARCHAR(32) NOT NULL,
-  shipping_country VARCHAR(64) DEFAULT 'United Kingdom',
-  subtotal_ex_vat NUMERIC(10, 2) NOT NULL CHECK (subtotal_ex_vat >= 0),
-  shipping_ex_vat NUMERIC(10, 2) NOT NULL DEFAULT 0.00 CHECK (shipping_ex_vat >= 0),
-  vat_total NUMERIC(10, 2) NOT NULL DEFAULT 0.00 CHECK (vat_total >= 0),
-  grand_total_inc_vat NUMERIC(10, 2) NOT NULL CHECK (grand_total_inc_vat >= 0),
-  currency VARCHAR(8) DEFAULT 'GBP',
+  shipping_country VARCHAR(64) DEFAULT 'Nigeria',
+  subtotal_ex_vat NUMERIC(12, 2) NOT NULL CHECK (subtotal_ex_vat >= 0),
+  shipping_ex_vat NUMERIC(12, 2) NOT NULL DEFAULT 0.00 CHECK (shipping_ex_vat >= 0),
+  delivery_fee NUMERIC(12, 2) NOT NULL DEFAULT 0.00 CHECK (delivery_fee >= 0),
+  vat_total NUMERIC(12, 2) NOT NULL DEFAULT 0.00 CHECK (vat_total >= 0),
+  grand_total_inc_vat NUMERIC(12, 2) NOT NULL CHECK (grand_total_inc_vat >= 0),
+  currency VARCHAR(8) DEFAULT 'NGN',
   idempotency_key VARCHAR(128) UNIQUE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -107,13 +108,28 @@ CREATE TABLE IF NOT EXISTS order_items (
   product_id VARCHAR(64) REFERENCES products(id) ON DELETE SET NULL,
   sku_snapshot VARCHAR(64) NOT NULL,
   product_name_snapshot VARCHAR(255) NOT NULL,
-  unit_price_ex_vat NUMERIC(10, 2) NOT NULL CHECK (unit_price_ex_vat >= 0),
+  unit_price_ex_vat NUMERIC(12, 2) NOT NULL CHECK (unit_price_ex_vat >= 0),
   quantity INT NOT NULL CHECK (quantity > 0),
-  vat_rate NUMERIC(4, 2) NOT NULL DEFAULT 0.20,
-  line_total_ex_vat NUMERIC(10, 2) NOT NULL CHECK (line_total_ex_vat >= 0)
+  vat_rate NUMERIC(4, 2) NOT NULL DEFAULT 0.00,
+  line_total_ex_vat NUMERIC(12, 2) NOT NULL CHECK (line_total_ex_vat >= 0)
 );
 
--- 9. Users Table (Admin & Customer Authentication)
+-- 9. Payments Table (Paystack Transactions & Provider Records)
+CREATE TABLE IF NOT EXISTS payments (
+  id VARCHAR(64) PRIMARY KEY,
+  order_id VARCHAR(64) NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  provider VARCHAR(32) NOT NULL DEFAULT 'paystack',
+  provider_reference VARCHAR(128) UNIQUE NOT NULL,
+  amount NUMERIC(12, 2) NOT NULL CHECK (amount >= 0),
+  currency VARCHAR(8) NOT NULL DEFAULT 'NGN',
+  status VARCHAR(32) NOT NULL DEFAULT 'pending', -- pending, paid, failed, cancelled
+  payment_data JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  verified_at TIMESTAMPTZ
+);
+
+-- 10. Users Table (Admin & Customer Authentication)
 CREATE TABLE IF NOT EXISTS users (
   id VARCHAR(64) PRIMARY KEY,
   email VARCHAR(255) UNIQUE NOT NULL,
@@ -140,5 +156,9 @@ CREATE INDEX IF NOT EXISTS idx_orders_number ON orders(order_number);
 CREATE INDEX IF NOT EXISTS idx_orders_idempotency ON orders(idempotency_key);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(order_id);
+CREATE INDEX IF NOT EXISTS idx_payments_ref ON payments(provider_reference);
+CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);

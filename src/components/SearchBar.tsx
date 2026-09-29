@@ -4,6 +4,7 @@ import { PRODUCTS } from '../data/products';
 import { CATEGORIES } from '../data/categories';
 import { fetchSearchSuggestions } from '../api/client';
 import { Product } from '../types';
+import { formatNaira } from '../utils/money';
 
 interface SearchBarProps {
   onSelectProduct?: (product: Product) => void;
@@ -346,9 +347,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--color-ink)' }}>
-                        £{product.price.toFixed(2)}
+                        {formatNaira(product.price)}
                       </div>
-                      <div style={{ fontSize: '0.6875rem', color: 'var(--color-muted)' }}>ex. VAT</div>
                     </div>
                   </div>
                 );

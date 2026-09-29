@@ -4,6 +4,7 @@ import { Product } from '../types';
 import { Badge } from './Badge';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
+import { formatNaira } from '../utils/money';
 
 interface ProductCardProps {
   product: Product;
@@ -45,14 +46,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     }
   };
 
-  const incVatPrice = (product.price * 1.2).toFixed(2);
-
   return (
     <div
       className={`product-card ${!product.inStock ? 'product-card-out-of-stock' : ''}`}
       onClick={() => onSelect(product)}
       role="article"
-      aria-label={`${product.name}, £${product.price.toFixed(2)} ex. VAT`}
+      aria-label={`${product.name}, ${formatNaira(product.price)}`}
     >
       <div className="product-card-image-wrap">
         {product.badge && (
@@ -143,13 +142,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <div className="product-card-footer">
           <div className="product-price-wrap">
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-              <span className="product-price">£{product.price.toFixed(2)}</span>
+              <span className="product-price">{formatNaira(product.price)}</span>
               {product.compareAtPrice && (
-                <span className="product-compare-price">£{product.compareAtPrice.toFixed(2)}</span>
+                <span className="product-compare-price">{formatNaira(product.compareAtPrice)}</span>
               )}
-              <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>ex. VAT</span>
             </div>
-            <span className="product-vat-label">£{incVatPrice} inc. VAT</span>
           </div>
 
           <button

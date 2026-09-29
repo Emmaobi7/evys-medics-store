@@ -8,6 +8,7 @@ import { ProductGrid } from '../components/ProductGrid';
 import { TrustSection } from '../components/TrustSection';
 import { Button } from '../components/Button';
 import { Product } from '../types';
+import { formatNaira } from '../utils/money';
 
 interface HomePageProps {
   onNavigate: (page: string, params?: Record<string, any>) => void;
@@ -315,7 +316,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                       {p.name}
                     </div>
                     <div style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--color-primary)', marginTop: '4px' }}>
-                      £{p.price.toFixed(2)}
+                      {formatNaira(p.price)}
                     </div>
                   </div>
                 ))}

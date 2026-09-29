@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { query } from '../db/connection';
 import { validate } from '../middleware/validate';
 import { config } from '../config/env';
+import { addMoney, multiplyMoney } from '../utils/money';
 
 export const cartRouter = Router();
 
@@ -24,7 +25,7 @@ const validateCartSchema = z.object({
 
 /**
  * POST /api/v1/cart/validate
- * Server-authoritative price, stock, VAT, and shipping calculation
+ * Server-authoritative price, stock, and total calculation (Tax-Inclusive, NGN)
  */
 cartRouter.post(
   '/validate',
@@ -32,17 +33,21 @@ cartRouter.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { items } = req.body;
+      const currency = config.commerce.currency || 'NGN';
 
       if (!items || items.length === 0) {
         return res.json({
           items: [],
+          subtotal: 0,
+          deliveryFee: 0,
+          total: 0,
           subtotalExVat: 0,
           shippingExVat: 0,
           vatTotal: 0,
           grandTotalIncVat: 0,
-          currency: 'GBP',
-          freeShippingThreshold: config.commerce.freeShippingThreshold,
-          shippingRemaining: config.commerce.freeShippingThreshold,
+          currency,
+          freeShippingThreshold: 0,
+          shippingRemaining: 0,
         });
       }
 
@@ -54,7 +59,6 @@ cartRouter.post(
           p.sku,
           p.name,
           p.price_ex_vat,
-          p.vat_rate,
           p.is_active,
           COALESCE(inv.stock_count, 0) AS stock_count,
           (
@@ -77,8 +81,7 @@ cartRouter.post(
       });
 
       const validatedItems: any[] = [];
-      let subtotalExVat = 0;
-      let totalVat = 0;
+      let subtotal = 0;
 
       for (const item of items) {
         const key = item.productId || item.sku;
@@ -86,45 +89,45 @@ cartRouter.post(
 
         if (prod) {
           const unitPrice = parseFloat(prod.price_ex_vat);
-          const vatRate = parseFloat(prod.vat_rate || '0.20');
           const stock = parseInt(prod.stock_count || '0', 10);
           
           // Bound quantity by available stock
           const validatedQty = Math.min(item.quantity, stock > 0 ? item.quantity : 0);
-          const lineTotalExVat = unitPrice * validatedQty;
-          const lineVat = lineTotalExVat * vatRate;
-
-          subtotalExVat += lineTotalExVat;
-          totalVat += lineVat;
+          const lineTotal = multiplyMoney(unitPrice, validatedQty);
+          subtotal = addMoney(subtotal, lineTotal);
 
           validatedItems.push({
             productId: prod.id,
             sku: prod.sku,
             name: prod.name,
             imageUrl: prod.image_url,
+            unitPrice,
             unitPriceExVat: unitPrice,
             requestedQuantity: item.quantity,
             validatedQuantity: validatedQty,
             availableStock: stock,
             isAvailable: stock > 0,
             hasSufficientStock: stock >= item.quantity,
-            vatRate,
-            lineTotalExVat: parseFloat(lineTotalExVat.toFixed(2)),
-            lineVatTotal: parseFloat(lineVat.toFixed(2)),
-            lineTotalIncVat: parseFloat((lineTotalExVat + lineVat).toFixed(2)),
+            vatRate: 0.00,
+            lineTotal,
+            lineTotalExVat: lineTotal,
+            lineVatTotal: 0.00,
+            lineTotalIncVat: lineTotal,
           });
         } else {
           validatedItems.push({
             productId: item.productId || '',
             sku: item.sku || '',
             name: 'Unavailable Product',
+            unitPrice: 0,
             unitPriceExVat: 0,
             requestedQuantity: item.quantity,
             validatedQuantity: 0,
             availableStock: 0,
             isAvailable: false,
             hasSufficientStock: false,
-            vatRate: 0.20,
+            vatRate: 0.00,
+            lineTotal: 0,
             lineTotalExVat: 0,
             lineVatTotal: 0,
             lineTotalIncVat: 0,
@@ -132,24 +135,21 @@ cartRouter.post(
         }
       }
 
-      // Shipping calculation based on environment/config rules
-      const freeThreshold = config.commerce.freeShippingThreshold;
-      const shippingExVat = subtotalExVat >= freeThreshold || subtotalExVat === 0
-        ? 0.00
-        : config.commerce.standardShippingRate;
-
-      const grandTotalIncVat = subtotalExVat + shippingExVat + totalVat;
-      const shippingRemaining = Math.max(0, freeThreshold - subtotalExVat);
+      const deliveryFee = config.commerce.defaultDeliveryFee || 0.00;
+      const total = addMoney(subtotal, deliveryFee);
 
       res.json({
         items: validatedItems,
-        subtotalExVat: parseFloat(subtotalExVat.toFixed(2)),
-        shippingExVat: parseFloat(shippingExVat.toFixed(2)),
-        vatTotal: parseFloat(totalVat.toFixed(2)),
-        grandTotalIncVat: parseFloat(grandTotalIncVat.toFixed(2)),
-        currency: 'GBP',
-        freeShippingThreshold: freeThreshold,
-        shippingRemaining: parseFloat(shippingRemaining.toFixed(2)),
+        subtotal,
+        deliveryFee,
+        total,
+        subtotalExVat: subtotal,
+        shippingExVat: deliveryFee,
+        vatTotal: 0.00,
+        grandTotalIncVat: total,
+        currency,
+        freeShippingThreshold: config.commerce.freeShippingThreshold || 0,
+        shippingRemaining: 0,
       });
     } catch (error) {
       next(error);

@@ -3,6 +3,7 @@ import { X, Trash2, ShoppingBag, ArrowRight, Truck } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { QuantitySelector } from './QuantitySelector';
 import { Button } from './Button';
+import { formatNaira } from '../utils/money';
 
 interface CartDrawerProps {
   onNavigateToCartPage: () => void;
@@ -24,12 +25,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     subtotal,
     estimatedShipping,
     total,
-    freeShippingThreshold,
-    shippingRemaining,
     totalItems,
   } = useCart();
-
-  const progressPercent = Math.min(100, (subtotal / freeShippingThreshold) * 100);
 
   return (
     <>
@@ -56,69 +53,26 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           </button>
         </div>
 
-        {/* Free Shipping Progress Indicator */}
+        {/* Delivery Note */}
         <div
           style={{
-            padding: '12px 24px',
+            padding: '10px 20px',
             backgroundColor: 'var(--color-accent-subtle)',
             borderBottom: '1px solid var(--color-border)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '0.75rem',
+            color: 'var(--color-primary)',
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '0.8125rem',
-              fontWeight: 600,
-              color: 'var(--color-primary)',
-              marginBottom: '6px',
-            }}
-          >
-            <Truck size={15} />
-            {shippingRemaining > 0 ? (
-              <span>
-                Add <strong>£{shippingRemaining.toFixed(2)}</strong> more for FREE Delivery
-              </span>
-            ) : (
-              <span style={{ color: 'var(--color-success)' }}>
-                You have qualified for <strong>FREE Delivery</strong>!
-              </span>
-            )}
-          </div>
-          <div
-            style={{
-              width: '100%',
-              height: '6px',
-              backgroundColor: 'rgba(8, 126, 139, 0.15)',
-              borderRadius: 'var(--radius-full)',
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              style={{
-                width: `${progressPercent}%`,
-                height: '100%',
-                backgroundColor: shippingRemaining === 0 ? 'var(--color-success)' : 'var(--color-primary)',
-                transition: 'width 300ms ease',
-              }}
-            />
-          </div>
+          <Truck size={14} />
+          <span>Admin-coordinated &amp; standard dispatch in Nigeria</span>
         </div>
 
-        {/* Item List */}
+        {/* Drawer Body */}
         {cart.length === 0 ? (
-          <div
-            style={{
-              flexGrow: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '40px 24px',
-              textAlign: 'center',
-            }}
-          >
+          <div className="cart-drawer-empty">
             <div
               style={{
                 width: '64px',
@@ -128,15 +82,15 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginBottom: '16px',
+                margin: '0 auto 16px auto',
                 color: 'var(--color-muted)',
               }}
             >
               <ShoppingBag size={28} />
             </div>
-            <h3 style={{ fontSize: '1.125rem', marginBottom: '8px' }}>Your basket is empty</h3>
-            <p style={{ fontSize: '0.875rem', marginBottom: '24px', maxWidth: '260px' }}>
-              Explore our clinical and laboratory catalogues to start ordering supplies.
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '6px' }}>Your basket is empty</h3>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--color-muted)', marginBottom: '20px' }}>
+              Add medical, lab, or clinical supplies to view them here.
             </p>
             <Button
               variant="primary"
@@ -146,7 +100,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 onNavigateToShop();
               }}
             >
-              Shop All Products
+              Explore Products
             </Button>
           </div>
         ) : (
@@ -167,9 +121,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   </div>
 
                   <div className="cart-item-price">
-                    £{(item.product.price * item.quantity).toFixed(2)}
+                    {formatNaira(item.product.price * item.quantity)}
                     <span style={{ fontSize: '0.75rem', fontWeight: 400, color: 'var(--color-muted)', marginLeft: '6px' }}>
-                      (£{item.product.price.toFixed(2)} each)
+                      ({formatNaira(item.product.price)} each)
                     </span>
                   </div>
 
@@ -213,20 +167,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         {cart.length > 0 && (
           <div className="cart-drawer-footer">
             <div className="cart-summary-row">
-              <span>Subtotal (ex. VAT)</span>
-              <span>£{subtotal.toFixed(2)}</span>
+              <span>Subtotal</span>
+              <span>{formatNaira(subtotal)}</span>
             </div>
             <div className="cart-summary-row">
-              <span>Est. VAT (20%)</span>
-              <span>£{(subtotal * 0.2).toFixed(2)}</span>
-            </div>
-            <div className="cart-summary-row">
-              <span>Standard Shipping</span>
-              <span>{estimatedShipping === 0 ? 'FREE' : `£${estimatedShipping.toFixed(2)}`}</span>
+              <span>Delivery</span>
+              <span>{estimatedShipping === 0 ? 'Admin / Standard (₦0.00)' : formatNaira(estimatedShipping)}</span>
             </div>
             <div className="cart-summary-row total">
-              <span>Estimated Total (inc. VAT)</span>
-              <span>£{(total + subtotal * 0.2).toFixed(2)}</span>
+              <span>Total Payable</span>
+              <span>{formatNaira(total)}</span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -251,7 +201,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   onNavigateToCartPage();
                 }}
               >
-                View Full Basket &amp; VAT Breakdown
+                View Full Basket
               </Button>
             </div>
           </div>

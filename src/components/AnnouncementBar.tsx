@@ -9,12 +9,12 @@ export const AnnouncementBar: React.FC = () => {
         <div className="announcement-content desktop-only">
           <span className="announcement-item">
             <Truck size={13} strokeWidth={2.5} style={{ color: 'var(--color-accent)' }} />
-            <span>Free Delivery on orders over £50</span>
+            <span>Reliable Medical &amp; Laboratory Supply Nationwide</span>
           </span>
           <span className="announcement-bullet">•</span>
           <span className="announcement-item">
             <ShieldCheck size={13} strokeWidth={2.5} style={{ color: 'var(--color-accent)' }} />
-            <span>Professional Medical &amp; Laboratory Supplies</span>
+            <span>Certified Diagnostic &amp; Clinical Equipment</span>
           </span>
           <span className="announcement-bullet">•</span>
           <span className="announcement-item">
@@ -27,7 +27,7 @@ export const AnnouncementBar: React.FC = () => {
         <div className="announcement-content mobile-only">
           <span className="announcement-item">
             <Truck size={12} strokeWidth={2.5} style={{ color: 'var(--color-accent)' }} />
-            <span>Free Delivery &gt; £50</span>
+            <span>Nationwide Clinical Supply</span>
           </span>
           <span className="announcement-bullet">•</span>
           <span className="announcement-item">

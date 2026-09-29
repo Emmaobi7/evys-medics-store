@@ -1,0 +1,564 @@
+Now we have the confirmed business rules for Evy's Projects. Build the production commerce/payment layer around these requirements.
+
+## CONFIRMED BUSINESS RULES
+
+### Currency
+
+* Primary currency: NGN (Nigerian Naira)
+* The application must currently operate in NGN only.
+* However, currency handling MUST be modular so additional currencies such as USD/GBP can be introduced later without rewriting the order, product, cart, or payment architecture.
+* Do NOT add a currency selector yet.
+* Do NOT perform currency conversion.
+* Do NOT introduce USD/GBP into the customer-facing UI.
+
+### Payment
+
+* Payment provider: Paystack.
+* Integrate Paystack using server-side payment initialization and verification.
+* Never trust payment status, amount, or currency from the frontend.
+* Paystack secret keys must exist only on the backend.
+* Never expose secret keys through Vite/frontend environment variables.
+* Use environment variables for all Paystack credentials/configuration.
+* Do NOT hardcode credentials.
+
+### Delivery
+
+* Delivery/shipping is ADMIN-CONTROLLED.
+* Do not hardcode a universal delivery fee.
+* The customer can place an order without knowing a fixed delivery fee in advance if the current business workflow requires admin confirmation.
+* Design the order model so delivery charges can be added/updated by an authorized admin without corrupting the product/order price snapshots.
+* Clearly distinguish:
+
+  * subtotal
+  * delivery fee
+  * total
+* Delivery fee must be represented independently in the database/order model.
+
+### Tax
+
+* Product prices are TAX-INCLUSIVE.
+* Admin enters the final selling price of each product.
+* The checkout/order system must NOT add a separate VAT/tax percentage.
+* Remove the current hardcoded 20% VAT calculation from order totals.
+* Do NOT replace it with 7.5%.
+* Do NOT implement automatic tax calculation.
+* Do NOT create a tax engine.
+* The product/order price is the final product price presented to the customer.
+
+---
+
+# PHASE 1 — AUDIT THE EXISTING COMMERCE FLOW
+
+Before changing code, inspect:
+
+* product schema
+* cart validation
+* order schema
+* order creation
+* order_items
+* CheckoutMockModal
+* CartPage
+* CartContext
+* admin routes
+* authentication/authorization
+* existing price calculations
+* existing VAT logic
+* existing delivery logic
+* existing idempotency implementation
+* existing order tests
+
+Understand the current architecture first.
+
+Do NOT rewrite working functionality unnecessarily.
+
+---
+
+# PHASE 2 — MODULAR MONEY/CURRENCY MODEL
+
+Introduce a proper money/currency abstraction.
+
+At minimum:
+
+* currency code: `NGN`
+* currency symbol: `₦`
+* monetary values stored safely and consistently
+* avoid floating-point arithmetic for financial calculations
+
+Prefer integer minor units where appropriate.
+
+For NGN, make the representation explicit and consistent across:
+
+* products
+* cart
+* orders
+* order_items
+* delivery fees
+* payment amounts
+
+The architecture should make adding:
+
+```text
+USD
+GBP
+EUR
+...
+```
+
+possible later without changing the core order model.
+
+Do NOT implement those currencies now.
+
+Do NOT perform FX conversion.
+
+---
+
+# PHASE 3 — REMOVE THE OLD TAX MODEL
+
+The existing order calculation currently contains a UK-style 20% VAT assumption.
+
+Remove that from the order total calculation.
+
+The order calculation should conceptually become:
+
+```text
+subtotal
++ delivery fee
+= total
+```
+
+Where:
+
+```text
+subtotal = sum(product final prices × quantities)
+```
+
+There must be no automatic:
+
+```text
+subtotal × 20%
+```
+
+or any other tax calculation.
+
+Preserve authoritative server-side pricing.
+
+The client must never be able to manipulate product prices.
+
+---
+
+# PHASE 4 — DELIVERY MODEL
+
+Implement delivery as an independent order amount.
+
+For example:
+
+```text
+subtotal
+deliveryFee
+total
+currency
+```
+
+The initial customer checkout may use:
+
+```text
+deliveryFee = 0
+```
+
+if the admin has not yet assigned a delivery charge.
+
+But design the database/API so an authorized admin can later set the delivery fee for an order.
+
+When delivery is changed:
+
+```text
+total = subtotal + deliveryFee
+```
+
+must be recalculated server-side.
+
+Do not modify immutable product/order-item price snapshots.
+
+Do not modify historical product prices.
+
+---
+
+# PHASE 5 — PAYSTACK INTEGRATION
+
+Implement Paystack properly.
+
+Required architecture:
+
+```text
+Frontend
+   ↓
+Create order
+   ↓
+Backend creates pending order
+   ↓
+Backend initializes Paystack transaction
+   ↓
+Frontend receives authorization URL/reference
+   ↓
+Customer completes Paystack payment
+   ↓
+Paystack redirects customer
+   ↓
+Frontend displays payment status
+   ↓
+Backend verifies transaction with Paystack
+   ↓
+Backend validates:
+   - reference
+   - amount
+   - currency
+   - order
+   - payment status
+   ↓
+Order becomes paid
+```
+
+IMPORTANT:
+
+The frontend redirect MUST NOT be treated as proof of payment.
+
+Payment verification must happen on the backend.
+
+---
+
+# PHASE 6 — PAYMENT DATA MODEL
+
+Add a proper payment representation.
+
+At minimum support:
+
+* payment id
+* order id
+* provider
+* provider reference
+* amount
+* currency
+* status
+* created_at
+* updated_at
+* verified_at
+
+Use appropriate uniqueness constraints.
+
+Paystack transaction references must be idempotent.
+
+Possible statuses:
+
+```text
+pending
+paid
+failed
+cancelled
+```
+
+Use the project's existing conventions where appropriate.
+
+Do not create unnecessary abstractions.
+
+---
+
+# PHASE 7 — ORDER STATUS VS PAYMENT STATUS
+
+Keep these conceptually separate.
+
+For example:
+
+Payment:
+
+```text
+pending
+paid
+failed
+```
+
+Order:
+
+```text
+pending
+confirmed
+processing
+ready
+completed
+cancelled
+```
+
+Do not use one field to represent both payment and fulfillment state.
+
+The admin should eventually be able to manage fulfillment independently of payment.
+
+---
+
+# PHASE 8 — PAYSTACK AMOUNT VALIDATION
+
+This is critical.
+
+When verifying a Paystack transaction, compare the provider response against the authoritative order:
+
+```text
+provider amount
+==
+server order total
+```
+
+and:
+
+```text
+provider currency
+==
+server order currency
+```
+
+Do NOT trust:
+
+```text
+frontend amount
+frontend currency
+frontend payment status
+```
+
+The server must determine the amount.
+
+Paystack should receive the server-authoritative amount.
+
+---
+
+# PHASE 9 — WEBHOOK SUPPORT
+
+Implement Paystack webhook handling if appropriate for the current integration.
+
+Webhook processing must:
+
+* verify Paystack signature
+* reject invalid signatures
+* be idempotent
+* identify the order/payment using the provider reference
+* never blindly trust the request body
+* safely handle duplicate events
+
+The webhook should be capable of confirming payment even if the customer closes the browser before returning to the site.
+
+Do not mark an order as paid merely because a frontend callback occurred.
+
+---
+
+# PHASE 10 — ADMIN DELIVERY UPDATE
+
+Create the backend capability for an authenticated admin to update delivery fee on an existing order.
+
+Requirements:
+
+* admin authentication required
+* validate amount
+* prevent negative delivery fees
+* preserve original product prices
+* recalculate total server-side
+* update the payment amount only if the order has NOT already been successfully paid
+* do not silently change the amount of an already-paid transaction
+
+If an already-paid order needs a delivery adjustment, return a clear error rather than corrupting payment history.
+
+---
+
+# PHASE 11 — CHECKOUT UI
+
+Replace the current mock payment behavior with the real Paystack flow.
+
+The checkout should clearly show:
+
+```text
+Subtotal
+Delivery
+Total
+```
+
+Use:
+
+```text
+₦
+```
+
+for NGN formatting.
+
+Do not show:
+
+* £
+* GBP
+* VAT
+* 20% VAT
+* UK delivery
+* Stripe
+* fake payment success
+
+The checkout should handle:
+
+* payment initialization failure
+* payment cancellation
+* payment failure
+* payment verification failure
+* successful payment
+* already-paid order
+* expired/invalid payment reference
+
+Do not empty the cart until the order/payment flow has reached the correct successful state.
+
+---
+
+# PHASE 12 — ENVIRONMENT CONFIGURATION
+
+Add safe backend environment variables for Paystack.
+
+Use placeholders in `.env.example`.
+
+Never commit real credentials.
+
+Do not put the Paystack secret key in:
+
+```text
+VITE_*
+```
+
+or any frontend environment variable.
+
+Document the required variables.
+
+Do not ask the user to paste credentials into source code.
+
+---
+
+# PHASE 13 — TESTING
+
+Expand the existing test suite.
+
+At minimum test:
+
+### Currency
+
+* NGN formatting
+* NGN authoritative pricing
+* unsupported currency rejected
+* no accidental GBP/£ pricing path
+
+### Tax
+
+* no VAT is added
+* subtotal + delivery = total
+* client cannot manipulate price
+
+### Delivery
+
+* default delivery fee
+* admin can update delivery
+* negative delivery rejected
+* customer cannot update delivery
+* paid order cannot have payment amount silently changed
+
+### Payment
+
+* payment initialized using server-authoritative amount
+* NGN sent to Paystack
+* invalid verification rejected
+* wrong amount rejected
+* wrong currency rejected
+* wrong reference rejected
+* successful payment marks payment paid
+* duplicate verification is safe
+* duplicate webhook is safe
+* invalid webhook signature rejected
+* failed payment does not mark order paid
+
+### Existing tests
+
+Run all existing tests and ensure previous guarantees remain intact:
+
+* auth
+* order creation
+* stock deduction
+* concurrency
+* idempotency
+* price manipulation protection
+* immutable order snapshots
+
+---
+
+# PHASE 14 — SECURITY REVIEW
+
+Before finishing, inspect for:
+
+* exposed Paystack secret
+* client-controlled order totals
+* client-controlled payment amounts
+* client-controlled currency
+* missing webhook signature validation
+* duplicate payment processing
+* payment reference reuse
+* race conditions
+* paid-order amount modification
+* unauthorized delivery updates
+* sensitive payment information stored unnecessarily
+
+Do not store card numbers, CVVs, or other card credentials.
+
+Paystack should handle the sensitive card/payment details.
+
+---
+
+# PHASE 15 — BUILD + FINAL REPORT
+
+Run:
+
+```bash
+npx tsc -p tsconfig.server.json --noEmit
+npx tsc --noEmit
+npm run test:all
+npm run build
+```
+
+Also verify the frontend no longer contains customer-facing:
+
+```text
+£
+GBP
+20% VAT
+VAT calculation
+UK delivery
+Stripe
+mock payment success
+```
+
+unless an occurrence is explicitly internal/test-only.
+
+Report:
+
+1. database changes
+2. API endpoints added/changed
+3. Paystack flow
+4. payment state model
+5. delivery model
+6. currency architecture
+7. tax behavior
+8. environment variables required
+9. tests passed
+10. any remaining decisions requiring client input
+
+IMPORTANT FINAL BOUNDARY:
+
+Do not deploy.
+
+Do not add real Paystack credentials.
+
+Do not claim production payment readiness without credentials and real Paystack configuration.
+
+Do not invent delivery pricing.
+
+Do not add multi-currency UI.
+
+Do not add automatic tax.
+
+Do not add a new payment provider.
+
+Stop after the implementation, tests, and build are complete.
