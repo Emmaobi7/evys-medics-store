@@ -16,6 +16,7 @@ export const config = {
     currency: 'NGN' as const,
     defaultDeliveryFee: parseFloat(process.env.DEFAULT_DELIVERY_FEE || '0.00'),
     freeShippingThreshold: parseFloat(process.env.SHIPPING_FREE_THRESHOLD || '0.00'),
+    orderExpiryMinutes: parseInt(process.env.ORDER_EXPIRY_MINUTES || '30', 10),
   },
   paystack: {
     secretKey: process.env.PAYSTACK_SECRET_KEY || 'sk_test_mock_paystack_secret_key_evys_2026',

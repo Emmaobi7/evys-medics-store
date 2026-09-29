@@ -207,16 +207,19 @@ ordersRouter.post(
 
       const currency = config.commerce.currency || 'NGN';
 
-      // Insert Order with idempotency key
+      const expiryMinutes = config.commerce.orderExpiryMinutes || 30;
+      const expiresAt = new Date(Date.now() + expiryMinutes * 60 * 1000).toISOString();
+
+      // Insert Order with idempotency key and expires_at
       const insertOrderSql = `
         INSERT INTO orders (
           id, order_number, status, payment_status, payment_method,
           customer_name, customer_email, customer_phone, clinic_name, po_number,
           shipping_address_line1, shipping_city, shipping_postcode, shipping_country,
           subtotal_ex_vat, shipping_ex_vat, delivery_fee, vat_total, grand_total_inc_vat, currency,
-          idempotency_key
+          idempotency_key, expires_at
         )
-        VALUES ($1, $2, 'pending', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $15, 0.00, $16, $17, $18)
+        VALUES ($1, $2, 'pending', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $15, 0.00, $16, $17, $18, $19)
         RETURNING *;
       `;
 
@@ -239,6 +242,7 @@ ordersRouter.post(
         totalAmount.toFixed(2),
         currency,
         idempotencyKey || null,
+        expiresAt,
       ]);
 
       // Insert Order Items and decrement inventory with concurrency check

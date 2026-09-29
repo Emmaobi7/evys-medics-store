@@ -87,8 +87,9 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
       setOrderNumber(res.order.orderNumber);
 
       if (shippingDetails.paymentMethod === 'paystack') {
-        // Step 2: Initialize Paystack payment
-        const paystackRes = await initializePaystackPayment(res.order.id);
+        // Step 2: Initialize Paystack payment with callback URL
+        const callbackUrl = `${window.location.origin}/checkout/callback`;
+        const paystackRes = await initializePaystackPayment(res.order.id, callbackUrl);
         setPaystackReference(paystackRes.reference);
         setPaystackAuthUrl(paystackRes.authorizationUrl);
         setStep('paystack_processing');
@@ -108,6 +109,32 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
       setErrorMessage(
         err.message || 'Unable to complete order. Please verify stock availability and your delivery details.'
       );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  /**
+   * Re-initializes Paystack for the existing order without creating a duplicate order
+   */
+  const handleRetryPaystackPayment = async () => {
+    if (!orderId || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      const callbackUrl = `${window.location.origin}/checkout/callback`;
+      const paystackRes = await initializePaystackPayment(orderId, callbackUrl);
+      setPaystackReference(paystackRes.reference);
+      setPaystackAuthUrl(paystackRes.authorizationUrl);
+
+      if (paystackRes.authorizationUrl) {
+        window.open(paystackRes.authorizationUrl, '_blank', 'noopener,noreferrer');
+      }
+    } catch (err: any) {
+      console.error('[Paystack Retry Error]:', err);
+      setErrorMessage(err.message || 'Unable to re-initialize Paystack transaction.');
     } finally {
       setIsSubmitting(false);
     }
@@ -495,6 +522,19 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
               >
                 I Have Completed Payment
               </Button>
+
+              {errorMessage && (
+                <Button
+                  variant="secondary"
+                  size="md"
+                  fullWidth
+                  isLoading={isSubmitting}
+                  onClick={handleRetryPaystackPayment}
+                  icon={<RefreshCw size={14} />}
+                >
+                  Retry Payment for this Order
+                </Button>
+              )}
 
               <button
                 type="button"

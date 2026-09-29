@@ -570,6 +570,215 @@ async function runSafetyAudit() {
     });
   }
 
+  // =========================================================================
+  // TEST 9: Automatic Order Expiry Releases Reserved Stock for Overdue Orders
+  // =========================================================================
+  try {
+    await query('UPDATE inventory SET stock_count = 50 WHERE product_id = $1;', [testProduct.id]);
+
+    const createRes = await fetch(`${BASE_URL}/api/v1/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: 'Expiry Test Customer',
+        customerEmail: 'expiry@clinic.ng',
+        customerPhone: '08011223344',
+        shippingAddressLine1: '50 Broad Street',
+        shippingCity: 'Lagos',
+        shippingPostcode: '100001',
+        items: [{ productId: testProduct.id, quantity: 6 }],
+      }),
+    });
+    const orderData = (await createRes.json()) as any;
+    const orderId = orderData.order.id;
+
+    // Simulate order past its expiry window
+    await query("UPDATE orders SET expires_at = NOW() - INTERVAL '5 minutes' WHERE id = $1;", [orderId]);
+
+    const { expirePendingOrders } = await import('../services/orderService');
+    const expiryResult = await expirePendingOrders();
+
+    const stockAfterExpiry = (await query<any>('SELECT stock_count FROM inventory WHERE product_id = $1;', [testProduct.id])).rows[0].stock_count;
+    const expiredOrderRow = (await query<any>('SELECT status, stock_restored FROM orders WHERE id = $1;', [orderId])).rows[0];
+
+    const passed =
+      expiryResult.expiredCount >= 1 &&
+      stockAfterExpiry === 50 &&
+      expiredOrderRow.status === 'cancelled' &&
+      expiredOrderRow.stock_restored === true;
+
+    results.push({
+      name: '9. Automatic order expiry worker cancels overdue unpaid orders & restores stock (50 -> 44 -> 50)',
+      passed,
+      status: 200,
+      expectedStatus: 200,
+      details: `Expired count: ${expiryResult.expiredCount}, Stock restored to: ${stockAfterExpiry}, DB status: ${expiredOrderRow.status}`,
+    });
+  } catch (err: any) {
+    results.push({
+      name: '9. Automatic order expiry',
+      passed: false,
+      status: 0,
+      expectedStatus: 200,
+      details: err.message,
+    });
+  }
+
+  // =========================================================================
+  // TEST 10: Automatic Order Expiry Is Idempotent (Cannot restore stock twice)
+  // =========================================================================
+  try {
+    const { expirePendingOrders } = await import('../services/orderService');
+    const secondExpiryResult = await expirePendingOrders();
+
+    const stockAfterSecondScan = (await query<any>('SELECT stock_count FROM inventory WHERE product_id = $1;', [testProduct.id])).rows[0].stock_count;
+
+    const passed =
+      stockAfterSecondScan === 50; // Must remain exactly 50, not 56!
+
+    results.push({
+      name: '10. Repeated automatic expiry scan is idempotent and cannot restore stock twice',
+      passed,
+      status: 200,
+      expectedStatus: 200,
+      details: `Second scan expired count: ${secondExpiryResult.expiredCount}, Stock: ${stockAfterSecondScan} (Safe: not 56)`,
+    });
+  } catch (err: any) {
+    results.push({
+      name: '10. Idempotent automatic order expiry',
+      passed: false,
+      status: 0,
+      expectedStatus: 200,
+      details: err.message,
+    });
+  }
+
+  // =========================================================================
+  // TEST 11: Paid Orders Are NEVER Expired or Stock-Restored
+  // =========================================================================
+  try {
+    await query('UPDATE inventory SET stock_count = 50 WHERE product_id = $1;', [testProduct.id]);
+
+    const createRes = await fetch(`${BASE_URL}/api/v1/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: 'Paid Expiry Guard',
+        customerEmail: 'paidexp@clinic.ng',
+        customerPhone: '08011223344',
+        shippingAddressLine1: '50 Broad Street',
+        shippingCity: 'Lagos',
+        shippingPostcode: '100001',
+        items: [{ productId: testProduct.id, quantity: 2 }],
+      }),
+    });
+    const orderId = ((await createRes.json()) as any).order.id;
+
+    // Complete payment
+    const initRes = await fetch(`${BASE_URL}/api/v1/payments/initialize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId }),
+    });
+    const ref = ((await initRes.json()) as any).reference;
+    await fetch(`${BASE_URL}/api/v1/payments/verify/${ref}`);
+
+    // Set expires_at in the past
+    await query("UPDATE orders SET expires_at = NOW() - INTERVAL '10 minutes' WHERE id = $1;", [orderId]);
+
+    const { expirePendingOrders } = await import('../services/orderService');
+    await expirePendingOrders();
+
+    const orderRow = (await query<any>('SELECT status, payment_status, stock_restored FROM orders WHERE id = $1;', [orderId])).rows[0];
+    const finalStock = (await query<any>('SELECT stock_count FROM inventory WHERE product_id = $1;', [testProduct.id])).rows[0].stock_count;
+
+    const passed =
+      orderRow.payment_status === 'paid' &&
+      orderRow.status === 'confirmed' &&
+      orderRow.stock_restored === false &&
+      finalStock === 48; // Stock must remain deducted
+
+    results.push({
+      name: '11. Paid orders are protected from expiry worker even if expires_at has passed',
+      passed,
+      status: 200,
+      expectedStatus: 200,
+      details: `Status: ${orderRow.status}, Payment: ${orderRow.payment_status}, Stock: ${finalStock} (Reserved: 50 - 2)`,
+    });
+  } catch (err: any) {
+    results.push({
+      name: '11. Paid order expiry protection',
+      passed: false,
+      status: 0,
+      expectedStatus: 200,
+      details: err.message,
+    });
+  }
+
+  // =========================================================================
+  // TEST 12: Checkout Retry Re-initializes Payment Without Creating Duplicate Order
+  // =========================================================================
+  try {
+    const ordersBefore = (await query<any>('SELECT COUNT(*) AS count FROM orders;')).rows[0].count;
+
+    const createRes = await fetch(`${BASE_URL}/api/v1/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: 'No Duplicate Customer',
+        customerEmail: 'nodup@clinic.ng',
+        customerPhone: '08011223344',
+        shippingAddressLine1: '50 Broad Street',
+        shippingCity: 'Lagos',
+        shippingPostcode: '100001',
+        items: [{ productId: testProduct.id, quantity: 1 }],
+      }),
+    });
+    const orderData = ((await createRes.json()) as any).order;
+    const orderId = orderData.id;
+
+    // Payment attempt 1
+    const initRes1 = await fetch(`${BASE_URL}/api/v1/payments/initialize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId }),
+    });
+    const initData1 = (await initRes1.json()) as any;
+
+    // Retry payment attempt 2 on existing order
+    const initRes2 = await fetch(`${BASE_URL}/api/v1/payments/initialize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId }),
+    });
+    const initData2 = (await initRes2.json()) as any;
+
+    const ordersAfter = (await query<any>('SELECT COUNT(*) AS count FROM orders;')).rows[0].count;
+
+    const passed =
+      initRes1.status === 200 &&
+      initRes2.status === 200 &&
+      initData1.reference !== initData2.reference &&
+      initData2.orderNumber === orderData.orderNumber &&
+      Number(ordersAfter) === Number(ordersBefore) + 1; // Exactly 1 new order created, NOT 2!
+
+    results.push({
+      name: '12. Checkout retry re-initializes transaction for same order without duplicate order creation',
+      passed,
+      status: 200,
+      expectedStatus: 200,
+      details: `Ref 1: ${initData1.reference}, Ref 2: ${initData2.reference}, Orders added: 1 (Total: ${ordersAfter})`,
+    });
+  } catch (err: any) {
+    results.push({
+      name: '12. Payment retry without duplicate order',
+      passed: false,
+      status: 0,
+      expectedStatus: 200,
+      details: err.message,
+    });
+  }
+
   // --- Print Summary ---
   console.log('\n====================================================');
   console.log('📊 SAFETY AUDIT RESULTS SUMMARY');

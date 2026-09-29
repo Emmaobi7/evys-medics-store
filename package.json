@@ -17,6 +17,7 @@
     "test:paystack": "tsx server/src/tests/paystack.test.ts",
     "test:delivery": "tsx server/src/tests/delivery.test.ts",
     "test:safety": "tsx server/src/tests/safetyAudit.test.ts",
+    "orders:expire": "tsx server/src/scripts/expireOrders.ts",
     "test:all": "tsx server/src/tests/auth.test.ts && tsx server/src/tests/orderFlow.test.ts && tsx server/src/tests/paystack.test.ts && tsx server/src/tests/delivery.test.ts && tsx server/src/tests/safetyAudit.test.ts"
   },
   "dependencies": {

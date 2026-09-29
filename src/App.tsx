@@ -17,12 +17,22 @@ import { CartPage } from './pages/CartPage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
 import { CheckoutMockModal } from './pages/CheckoutMockModal';
+import { PaystackCallbackPage } from './pages/PaystackCallbackPage';
 
 import { Product } from './types';
 import { PRODUCTS } from './data/products';
 
 function AppContent() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'shop' | 'product' | 'cart' | 'about' | 'contact'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'shop' | 'product' | 'cart' | 'about' | 'contact' | 'callback'>(() => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      const search = window.location.search;
+      if (path === '/checkout/callback' || search.includes('reference=') || search.includes('trxref=')) {
+        return 'callback';
+      }
+    }
+    return 'home';
+  });
   const [pageParams, setPageParams] = useState<Record<string, any>>({});
   const [selectedProduct, setSelectedProduct] = useState<Product>(PRODUCTS[0]);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
@@ -37,6 +47,10 @@ function AppContent() {
   }, [currentPage, selectedProduct]);
 
   const handleNavigate = (page: string, params: Record<string, any> = {}) => {
+    // If navigating away from callback, clean browser query params cleanly
+    if (currentPage === 'callback' && typeof window !== 'undefined' && window.history?.pushState) {
+      window.history.pushState({}, '', window.location.pathname === '/checkout/callback' ? '/' : window.location.pathname);
+    }
     setCurrentPage(page as any);
     setPageParams(params);
   };
@@ -122,6 +136,14 @@ function AppContent() {
           <ContactPage
             initialReason={pageParams.reason || 'general'}
             onNavigateHome={() => handleNavigate('home')}
+          />
+        )}
+
+        {currentPage === 'callback' && (
+          <PaystackCallbackPage
+            onNavigateHome={() => handleNavigate('home')}
+            onNavigateShop={() => handleNavigate('shop')}
+            onNavigateCart={() => handleNavigate('cart')}
           />
         )}
       </main>

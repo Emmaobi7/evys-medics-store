@@ -1,0 +1,280 @@
+Now do the FINAL COMMERCE INTEGRATION AUDIT for Evy’s Projects.
+
+The backend payment/security audit is complete and currently reports:
+- 44/44 automated tests passing
+- server TypeScript clean
+- frontend TypeScript clean
+- production build clean
+- Paystack callback + webhook race safety
+- idempotent payment processing
+- stock restoration for unpaid cancellation
+- delivery-fee invalidation of stale payment attempts
+- authoritative server-side NGN amount
+- webhook HMAC SHA512 verification
+- no real Paystack secrets in repo/history
+
+Do NOT redesign the architecture.
+
+We now need to verify the actual CUSTOMER CHECKOUT EXPERIENCE end-to-end and close the remaining expiry gap.
+
+==================================================
+1. AUDIT THE COMPLETE FRONTEND CHECKOUT FLOW
+==================================================
+
+Trace the real frontend code from:
+
+Cart
+→ Checkout page/modal
+→ create order
+→ payment initialization
+→ Paystack redirect
+→ /checkout/callback
+→ payment verification
+→ success/failure state
+→ order confirmation
+
+Inspect the actual code. Do not assume the flow works because the backend tests pass.
+
+Verify:
+
+- Correct API endpoints are used.
+- Correct request/response shapes are used.
+- NGN is displayed consistently.
+- Product prices are tax-inclusive.
+- Delivery fee is displayed separately.
+- Total = subtotal + delivery fee.
+- No VAT/tax is calculated again in the frontend.
+- Frontend never calculates or overrides the authoritative payment amount.
+- Paystack public key is used only where appropriate.
+- Secret key is never exposed to frontend.
+- Customer gets a clear loading state during order/payment initialization.
+- Customer cannot accidentally submit the same checkout repeatedly.
+- Paystack redirect works from the returned authorization URL.
+- Callback route handles successful payment.
+- Callback route handles failed/cancelled payment.
+- Callback route handles missing/invalid reference.
+- Verification errors are presented cleanly.
+- Refreshing the callback page does not create duplicate orders/payments.
+- Already-paid orders show a stable success state.
+- Failed payment gives the customer a way to retry.
+- Retrying does NOT create another order unnecessarily.
+- A retry uses the existing unpaid order where appropriate.
+- If delivery was changed and the old payment attempt was cancelled, the frontend does not falsely show it as successful.
+
+==================================================
+2. VERIFY ORDER/PAYMENT STATE MAPPING
+==================================================
+
+Inspect the actual backend and frontend state names.
+
+Document the mapping between:
+
+Order status:
+pending
+confirmed
+processing
+ready
+completed
+cancelled
+
+Payment status:
+pending
+paid
+failed
+cancelled
+
+Verify there is no frontend/backend mismatch.
+
+Pay particular attention to:
+- payment_status vs order status
+- callback success vs webhook success
+- failed Paystack transaction
+- cancelled/superseded payment attempt
+- cancelled order
+- already-paid order
+
+Fix only genuine mismatches.
+
+==================================================
+3. IMPLEMENT MINIMAL AUTOMATIC ORDER EXPIRY
+==================================================
+
+The previous audit identified one remaining operational gap:
+
+Pending unpaid orders have expires_at, but there is currently no automatic worker/cleanup process.
+
+Implement the SMALLEST production-safe solution.
+
+Requirements:
+
+- Use the existing expires_at field.
+- Only expire orders that are genuinely:
+  status = pending
+  payment_status = pending
+  expires_at < NOW()
+
+- Expiring an order MUST use the existing idempotent
+  cancelOrderAndRestoreStock()
+  service.
+
+- Never restore stock for:
+  paid orders
+  confirmed orders
+  processing orders
+  ready orders
+  completed orders
+
+- Never restore stock twice.
+
+- Do NOT build Redis.
+- Do NOT introduce a queue system.
+- Do NOT introduce unnecessary infrastructure.
+
+Use the simplest appropriate mechanism already compatible with this Node/Express application.
+
+If the project already has a scheduler/cron mechanism, use it.
+
+If it does not, create a small reusable expiry function/service and expose a safe execution mechanism suitable for deployment (for example a dedicated script that can be run by platform cron).
+
+Do NOT create a public unauthenticated endpoint that anyone can call to mutate orders.
+
+Set/confirm a sensible expiry duration, but make it configurable through an environment variable rather than hardcoding it.
+
+For example:
+
+ORDER_EXPIRY_MINUTES=30
+
+Use the project's existing configuration conventions.
+
+Document how production deployment should execute the expiry task.
+
+==================================================
+4. PAYMENT RETRY BEHAVIOR
+==================================================
+
+Verify the actual retry implementation.
+
+Desired behavior:
+
+Customer creates Order A.
+Payment attempt 1 fails or is abandoned.
+Customer retries.
+The system should allow another payment attempt for Order A.
+
+Do NOT create duplicate Order B merely because payment attempt 1 failed.
+
+If delivery changed:
+- old payment attempt becomes cancelled/superseded
+- new initialization uses the new authoritative order total.
+
+If payment succeeds:
+- subsequent initialization attempts are blocked.
+
+Fix only if the existing implementation violates this.
+
+==================================================
+5. PAYSTACK CALLBACK UX
+==================================================
+
+Inspect the actual callback route/page.
+
+Make sure it handles:
+
+A. success
+B. failed payment
+C. cancelled/superseded reference
+D. invalid/missing reference
+E. verification API/network failure
+F. browser refresh
+G. webhook already processed payment
+
+The customer should never see a misleading "payment failed" when the backend already confirms payment.
+
+Likewise, do not show "payment successful" merely because Paystack redirected the browser. The backend verification result is authoritative.
+
+==================================================
+6. SECURITY FINAL CHECK
+==================================================
+
+Perform one final source audit for:
+
+PAYSTACK_SECRET_KEY
+JWT_SECRET
+DATABASE_URL
+VITE_*
+
+Confirm:
+
+- secrets are server-side only
+- .env remains ignored
+- no secrets are in frontend bundle
+- no secrets were committed
+- no secrets are logged
+- Paystack webhook signature is validated before processing
+- payment amount comes from server-side order state
+- payment currency is NGN
+- payment reference uniqueness is enforced
+
+Do not print any secret values in your report.
+
+==================================================
+7. TESTS
+==================================================
+
+Add/update tests for any actual gaps you find.
+
+At minimum verify:
+
+1. checkout creates one order
+2. payment initialization uses authoritative total
+3. successful callback verifies payment
+4. duplicate callback is idempotent
+5. webhook + callback race is safe
+6. failed payment can retry
+7. retry does not create duplicate order
+8. stale delivery payment reference is rejected
+9. expired unpaid order restores stock
+10. expired order cannot restore stock twice
+11. paid order cannot be expired/restored
+12. invalid webhook signature is rejected
+
+Run:
+
+npx tsc -p tsconfig.server.json --noEmit
+npx tsc --noEmit
+npm run test:all
+npm run build
+
+If you add a dedicated expiry script, run/test it too.
+
+==================================================
+8. IMPORTANT CONSTRAINTS
+==================================================
+
+Do NOT:
+- add Stripe
+- add another payment gateway
+- add multi-currency UI
+- add automatic VAT/tax calculations
+- invent company/legal information
+- add unnecessary dependencies
+- add Redis/queues
+- deploy anything
+- add real Paystack credentials
+- change the established Evy’s Projects visual design unnecessarily
+
+This is the FINAL integration/safety pass, not a feature expansion.
+
+At the end report:
+
+1. Frontend checkout flow status
+2. Callback behavior
+3. Payment retry behavior
+4. Automatic expiry implementation
+5. Stock restoration behavior
+6. Security status
+7. Tests
+8. Build
+9. Exact remaining production actions, if any
+
+If everything is sound, explicitly say what is now production-ready and what still requires real Paystack credentials/configuration from the client.

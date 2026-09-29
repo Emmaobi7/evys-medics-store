@@ -136,3 +136,56 @@ export async function cancelOrderAndRestoreStock(
     client.release();
   }
 }
+
+export interface ExpireOrdersResult {
+  expiredCount: number;
+  restoredItemsCount: number;
+  expiredOrderNumbers: string[];
+}
+
+/**
+ * Scans and expires all unpaid pending orders whose expires_at has passed.
+ * Uses cancelOrderAndRestoreStock() to ensure atomic, idempotent stock restoration.
+ */
+export async function expirePendingOrders(): Promise<ExpireOrdersResult> {
+  const candidateRes = await query<{ id: string; order_number: string }>(
+    `
+    SELECT id, order_number
+    FROM orders
+    WHERE status = 'pending'
+      AND payment_status = 'pending'
+      AND expires_at IS NOT NULL
+      AND expires_at < NOW()
+      AND stock_restored = FALSE
+    ORDER BY expires_at ASC
+    LIMIT 100;
+    `
+  );
+
+  let expiredCount = 0;
+  let totalRestoredItems = 0;
+  const expiredOrderNumbers: string[] = [];
+
+  for (const row of candidateRes.rows) {
+    try {
+      const cancelRes = await cancelOrderAndRestoreStock(
+        row.id,
+        'Order expired automatically due to payment timeout'
+      );
+      if (cancelRes.stockRestored) {
+        expiredCount++;
+        totalRestoredItems += cancelRes.restoredItemsCount;
+        expiredOrderNumbers.push(row.order_number);
+      }
+    } catch (err: any) {
+      console.error(`[Order Expiry Error] Failed to expire order ${row.order_number}:`, err.message);
+    }
+  }
+
+  return {
+    expiredCount,
+    restoredItemsCount: totalRestoredItems,
+    expiredOrderNumbers,
+  };
+}
+
