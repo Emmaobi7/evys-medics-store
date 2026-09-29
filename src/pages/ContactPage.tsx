@@ -181,10 +181,9 @@ export const ContactPage: React.FC<ContactPageProps> = ({
                   }}
                 >
                   <option value="general">General Product Enquiry</option>
-                  <option value="bulk-order">Bulk Practice / Clinic Order Quote</option>
-                  <option value="institutional-account">Institutional / 30-Day Credit Application</option>
+                  <option value="bulk-order">Bulk / Wholesale Order Quote</option>
                   <option value="technical">Technical Datasheets &amp; Compliance</option>
-                  <option value="delivery">Existing Order &amp; Delivery Tracking</option>
+                  <option value="delivery">Order &amp; Delivery Tracking</option>
                 </select>
               </div>
 

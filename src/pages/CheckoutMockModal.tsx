@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, ShieldCheck, Lock, ArrowRight, CreditCard, FileText, PackageCheck, AlertCircle, ExternalLink, RefreshCw } from 'lucide-react';
+import { X, ShieldCheck, Lock, ArrowRight, CreditCard, PackageCheck, AlertCircle, ExternalLink, RefreshCw } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { submitOrderToApi, initializePaystackPayment, verifyPaystackPayment } from '../api/client';
 import { Button } from '../components/Button';
@@ -37,15 +37,12 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
   }, [isOpen]);
 
   const [shippingDetails, setShippingDetails] = useState({
-    clinicName: '',
     contactName: '',
     email: '',
     phone: '',
     addressLine1: '',
     city: '',
     postcode: '',
-    paymentMethod: 'paystack' as 'paystack' | 'invoice' | 'nhs_po',
-    poNumber: '',
   });
 
   if (!isOpen) return null;
@@ -63,15 +60,13 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
     setErrorMessage(null);
 
     const orderPayload = {
-      customerName: shippingDetails.contactName,
-      customerEmail: shippingDetails.email,
-      customerPhone: shippingDetails.phone,
-      clinicName: shippingDetails.clinicName || undefined,
-      poNumber: shippingDetails.poNumber || undefined,
-      paymentMethod: shippingDetails.paymentMethod,
-      shippingAddressLine1: shippingDetails.addressLine1,
-      shippingCity: shippingDetails.city,
-      shippingPostcode: shippingDetails.postcode,
+      customerName: shippingDetails.contactName.trim(),
+      customerEmail: shippingDetails.email.trim(),
+      customerPhone: shippingDetails.phone.trim(),
+      paymentMethod: 'paystack' as const,
+      shippingAddressLine1: shippingDetails.addressLine1.trim(),
+      shippingCity: shippingDetails.city.trim(),
+      shippingPostcode: shippingDetails.postcode.trim(),
       shippingCountry: 'Nigeria',
       idempotencyKey: idempotencyKeyRef.current,
       items: cart.map((item) => ({
@@ -81,33 +76,26 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
     };
 
     try {
-      // Step 1: Create pending order with server-authoritative pricing
+      // 1. Create server-authoritative pending order
       const res = await submitOrderToApi(orderPayload);
       setOrderId(res.order.id);
       setOrderNumber(res.order.orderNumber);
 
-      if (shippingDetails.paymentMethod === 'paystack') {
-        // Step 2: Initialize Paystack payment with callback URL
-        const callbackUrl = `${window.location.origin}/checkout/callback`;
-        const paystackRes = await initializePaystackPayment(res.order.id, callbackUrl);
-        setPaystackReference(paystackRes.reference);
-        setPaystackAuthUrl(paystackRes.authorizationUrl);
-        setStep('paystack_processing');
+      // 2. Initialize Paystack payment transaction
+      const callbackUrl = `${window.location.origin}/checkout/callback`;
+      const paystackRes = await initializePaystackPayment(res.order.id, callbackUrl);
+      setPaystackReference(paystackRes.reference);
+      setPaystackAuthUrl(paystackRes.authorizationUrl);
+      setStep('paystack_processing');
 
-        // Open Paystack authorization URL
-        if (paystackRes.authorizationUrl) {
-          window.open(paystackRes.authorizationUrl, '_blank', 'noopener,noreferrer');
-        }
-      } else {
-        // Institutional Invoice / PO
-        setStep('confirmation');
-        clearCart();
-        onOrderCompleted();
+      // Open Paystack payment window
+      if (paystackRes.authorizationUrl) {
+        window.open(paystackRes.authorizationUrl, '_blank', 'noopener,noreferrer');
       }
     } catch (err: any) {
       console.error('[Checkout] Order error:', err);
       setErrorMessage(
-        err.message || 'Unable to complete order. Please verify stock availability and your delivery details.'
+        err.message || 'Unable to complete order. Please verify stock availability and delivery details.'
       );
     } finally {
       setIsSubmitting(false);
@@ -156,7 +144,7 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
         clearCart();
         onOrderCompleted();
       } else {
-        setErrorMessage('Payment verification pending or not confirmed yet. Please try again.');
+        setErrorMessage('Payment verification is pending or not confirmed yet. Please complete the transaction on Paystack.');
       }
     } catch (err: any) {
       console.error('[Paystack Verification Error]:', err);
@@ -185,7 +173,7 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
         style={{
           backgroundColor: 'var(--color-white)',
           borderRadius: 'var(--radius-xl)',
-          maxWidth: '720px',
+          maxWidth: '640px',
           width: '100%',
           maxHeight: '90vh',
           overflowY: 'auto',
@@ -207,13 +195,13 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
         {step === 'details' && (
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-primary)', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '6px' }}>
-              <Lock size={15} /> 256-BIT SECURE ENCRYPTED CHECKOUT
+              <Lock size={15} /> 256-BIT ENCRYPTED CHECKOUT
             </div>
-            <h2 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '6px' }}>
-              Delivery &amp; Practice Information
+            <h2 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '6px', color: 'var(--color-ink)' }}>
+              Delivery Information
             </h2>
             <p style={{ fontSize: '0.875rem', color: 'var(--color-muted)', marginBottom: '20px' }}>
-              Tax-inclusive pricing. Complete shipping details for medical supply dispatch.
+              Prices are tax-inclusive. Enter delivery details to proceed to secure Paystack settlement.
             </p>
 
             {errorMessage && (
@@ -233,64 +221,50 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
               >
                 <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
                 <div>
-                  <strong>Order could not be submitted:</strong> {errorMessage}
+                  <strong>Notice:</strong> {errorMessage}
                 </div>
               </div>
             )}
 
-            <form onSubmit={handleSubmitOrder} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {/* Clinic / Practitioner details */}
-              <div className="form-row-2col">
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Clinic / Practice / Institution Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Apex Health Clinic & Lab"
-                    value={shippingDetails.clinicName}
-                    onChange={(e) => setShippingDetails({ ...shippingDetails, clinicName: e.target.value })}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Recipient Full Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Dr. Eleanor Vance"
-                    value={shippingDetails.contactName}
-                    onChange={(e) => setShippingDetails({ ...shippingDetails, contactName: e.target.value })}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
-                  />
-                </div>
+            <form onSubmit={handleSubmitOrder} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              {/* Recipient Full Name */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
+                  Recipient Full Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Eleanor Vance"
+                  value={shippingDetails.contactName}
+                  onChange={(e) => setShippingDetails({ ...shippingDetails, contactName: e.target.value })}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
+                />
               </div>
 
+              {/* Email & Phone */}
               <div className="form-row-2col">
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Email Address (for Dispatch &amp; Receipt) *
+                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
+                    Email Address *
                   </label>
                   <input
                     type="email"
                     required
-                    placeholder="e.vance@clinic.com"
+                    placeholder="e.g. customer@example.com"
                     value={shippingDetails.email}
                     onChange={(e) => setShippingDetails({ ...shippingDetails, email: e.target.value })}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px' }}>
-                    Courier Contact Telephone *
+                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
+                    Telephone Number *
                   </label>
                   <input
                     type="tel"
                     required
-                    placeholder="e.g. +234 800 000 0000"
+                    placeholder="e.g. +234 801 234 5678"
                     value={shippingDetails.phone}
                     onChange={(e) => setShippingDetails({ ...shippingDetails, phone: e.target.value })}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
@@ -298,15 +272,15 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
                 </div>
               </div>
 
-              {/* Address */}
+              {/* Delivery Address */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
                   Delivery Address *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Street Address, Building, Suite / Lab Room"
+                  placeholder="Street Address, Building, Suite / Floor"
                   value={shippingDetails.addressLine1}
                   onChange={(e) => setShippingDetails({ ...shippingDetails, addressLine1: e.target.value })}
                   style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', marginBottom: '12px', boxSizing: 'border-box' }}
@@ -315,7 +289,7 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
                   <input
                     type="text"
                     required
-                    placeholder="City / State"
+                    placeholder="City / State *"
                     value={shippingDetails.city}
                     onChange={(e) => setShippingDetails({ ...shippingDetails, city: e.target.value })}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
@@ -323,7 +297,7 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
                   <input
                     type="text"
                     required
-                    placeholder="Postal Code / Area"
+                    placeholder="Postal Code / Area *"
                     value={shippingDetails.postcode}
                     onChange={(e) => setShippingDetails({ ...shippingDetails, postcode: e.target.value })}
                     style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
@@ -331,71 +305,30 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
                 </div>
               </div>
 
-              {/* Payment Method Selection */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '8px' }}>
-                  Payment &amp; Settlement Method
-                </label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <label
-                    style={{
-                      border: `1.5px solid ${shippingDetails.paymentMethod === 'paystack' ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                      borderRadius: 'var(--radius-md)',
-                      padding: '14px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      cursor: 'pointer',
-                      backgroundColor: shippingDetails.paymentMethod === 'paystack' ? 'var(--color-primary-light)' : 'var(--color-white)',
-                      transition: 'all var(--transition-fast)',
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      checked={shippingDetails.paymentMethod === 'paystack'}
-                      onChange={() => setShippingDetails({ ...shippingDetails, paymentMethod: 'paystack' })}
-                    />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                      <CreditCard size={18} style={{ color: 'var(--color-primary)' }} />
-                      <div>
-                        <div style={{ fontSize: '0.875rem', fontWeight: 700 }}>Paystack (Cards, Bank Transfer, USSD)</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>Instant secure online settlement in NGN (₦)</div>
-                      </div>
-                    </div>
-                  </label>
-
-                  <label
-                    style={{
-                      border: `1.5px solid ${shippingDetails.paymentMethod === 'invoice' ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                      borderRadius: 'var(--radius-md)',
-                      padding: '14px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      cursor: 'pointer',
-                      backgroundColor: shippingDetails.paymentMethod === 'invoice' ? 'var(--color-primary-light)' : 'var(--color-white)',
-                      transition: 'all var(--transition-fast)',
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      checked={shippingDetails.paymentMethod === 'invoice'}
-                      onChange={() => setShippingDetails({ ...shippingDetails, paymentMethod: 'invoice' })}
-                    />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                      <FileText size={18} style={{ color: 'var(--color-primary)' }} />
-                      <div>
-                        <div style={{ fontSize: '0.875rem', fontWeight: 700 }}>Institutional / 30-Day Clinical Invoice</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>For verified clinics, practices, and laboratories</div>
-                      </div>
-                    </div>
-                  </label>
+              {/* Paystack Payment Notice */}
+              <div
+                style={{
+                  border: '1.5px solid var(--color-primary)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '14px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  backgroundColor: 'var(--color-primary-light)',
+                }}
+              >
+                <CreditCard size={22} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-ink)' }}>
+                    Payment Method: Paystack (Cards, Bank Transfer, USSD)
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>
+                    Secure instant settlement in NGN (₦) via Paystack encrypted gateway
+                  </div>
                 </div>
               </div>
 
-              {/* Order summary review */}
+              {/* Order Summary breakdown */}
               <div style={{ backgroundColor: 'var(--color-bg)', padding: '16px 20px', borderRadius: 'var(--radius-lg)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '6px' }}>
                   <span>Items Subtotal</span>
@@ -421,9 +354,7 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
                 isLoading={isSubmitting}
                 icon={<ArrowRight size={18} />}
               >
-                {shippingDetails.paymentMethod === 'paystack'
-                  ? `Pay with Paystack (${formatNaira(total)})`
-                  : `Submit Purchase Order (${formatNaira(total)})`}
+                Pay Now with Paystack ({formatNaira(total)})
               </Button>
             </form>
           </div>
@@ -447,7 +378,7 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
               <CreditCard size={32} />
             </div>
 
-            <h2 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '8px' }}>
+            <h2 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '8px', color: 'var(--color-ink)' }}>
               Complete Payment on Paystack
             </h2>
             <p style={{ color: 'var(--color-muted)', marginBottom: '24px', maxWidth: '480px', margin: '0 auto 24px auto' }}>
@@ -575,7 +506,9 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
             <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--color-success)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
               Order Confirmed &amp; Verified
             </div>
-            <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '8px' }}>Thank You For Your Order</h2>
+            <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '8px', color: 'var(--color-ink)' }}>
+              Thank You For Your Order
+            </h2>
             <p style={{ color: 'var(--color-muted)', marginBottom: '20px' }}>
               Your order has been recorded and queued for warehouse picking and dispatch.
             </p>
