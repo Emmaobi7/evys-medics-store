@@ -115,6 +115,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
   const [editingDeliveryId, setEditingDeliveryId] = useState<string | null>(null);
   const [deliveryFeeInput, setDeliveryFeeInput] = useState<number>(0);
 
+  // Auth checking state
+  const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(() => Boolean(localStorage.getItem('evys_auth_token')));
+
   // Inquiries state
   const [inquiries, setInquiries] = useState<AdminInquiry[]>([]);
   const [isLoadingInquiries, setIsLoadingInquiries] = useState(false);
@@ -136,6 +139,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
   // Verify auth token on mount
   useEffect(() => {
     if (token) {
+      setIsCheckingAuth(true);
       fetchCurrentUser(token)
         .then((res) => {
           if (res.user.role === 'ADMIN') {
@@ -149,20 +153,28 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
         .catch(() => {
           setToken(null);
           localStorage.removeItem('evys_auth_token');
+        })
+        .finally(() => {
+          setIsCheckingAuth(false);
         });
+    } else {
+      setIsCheckingAuth(false);
     }
   }, [token]);
 
-  // Load categories when authenticated
+  // Eagerly load all tab counts and categories upon authentication
   useEffect(() => {
     if (token && currentUser) {
+      loadProducts();
+      loadOrders();
+      loadInquiries();
       fetchCategories()
         .then(setCategories)
         .catch(() => {});
     }
   }, [token, currentUser]);
 
-  // Reactive data loader when switching tabs or filters
+  // Reactive data loader when changing tab or filters
   useEffect(() => {
     if (token && currentUser) {
       if (activeTab === 'products') {
@@ -174,8 +186,6 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
       }
     }
   }, [
-    token,
-    currentUser,
     activeTab,
     orderFilterStatus,
     orderPaymentStatus,
@@ -480,6 +490,48 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
     p.sku.toLowerCase().includes(productSearch.toLowerCase()) ||
     p.brand.toLowerCase().includes(productSearch.toLowerCase())
   );
+
+  // ----------------------------------------------------
+  // Authentication Verification Splash
+  // ----------------------------------------------------
+  if (isCheckingAuth) {
+    return (
+      <div style={{ maxWidth: '480px', margin: '100px auto', padding: '0 20px', textAlign: 'center' }}>
+        <div style={{
+          backgroundColor: '#ffffff',
+          borderRadius: '16px',
+          border: '1px solid #e2e8f0',
+          padding: '44px 32px',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '16px'
+        }}>
+          <div style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '50%',
+            backgroundColor: '#e6fffa',
+            color: '#0d9488',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <RefreshCw size={26} className="animate-spin" />
+          </div>
+          <div>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', margin: '0 0 6px 0' }}>
+              Authenticating Admin Session
+            </h2>
+            <p style={{ fontSize: '0.875rem', color: '#64748b', margin: 0 }}>
+              Connecting to Evy's Medics secure clinical console...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ----------------------------------------------------
   // Unauthenticated Admin Gate

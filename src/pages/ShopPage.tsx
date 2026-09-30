@@ -571,7 +571,30 @@ export const ShopPage: React.FC<ShopPageProps> = ({
 
         {/* Product Grid & Pagination / Empty State */}
         <div>
-          {filteredProducts.length === 0 ? (
+          {isLoading && productsList.length === 0 ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px' }}>
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <div
+                  key={i}
+                  style={{
+                    backgroundColor: 'var(--color-white)',
+                    borderRadius: 'var(--radius-xl)',
+                    border: '1px solid var(--color-border)',
+                    padding: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px',
+                    boxShadow: 'var(--shadow-xs)',
+                  }}
+                >
+                  <div style={{ width: '100%', height: '180px', backgroundColor: '#F1F5F9', borderRadius: 'var(--radius-lg)' }} />
+                  <div style={{ width: '40%', height: '12px', backgroundColor: '#E2E8F0', borderRadius: '4px' }} />
+                  <div style={{ width: '85%', height: '16px', backgroundColor: '#E2E8F0', borderRadius: '4px' }} />
+                  <div style={{ width: '50%', height: '20px', backgroundColor: '#E2E8F0', borderRadius: '4px', marginTop: '12px' }} />
+                </div>
+              ))}
+            </div>
+          ) : filteredProducts.length === 0 ? (
             <div
               style={{
                 backgroundColor: 'var(--color-white)',

@@ -179,43 +179,66 @@ export const HomePage: React.FC<HomePageProps> = ({
       </section>
 
       {/* 5. Featured Products Grid */}
-      {featuredProducts.length > 0 && (
-        <section className="section" style={{ backgroundColor: 'var(--color-bg)' }}>
-          <div className="container">
-            <div className="section-header">
-              <div>
-                <div className="section-eyebrow">Professional Selection</div>
-                <h2 className="section-title">Featured Products</h2>
-                <p className="section-subtitle">
-                  In-demand clinical devices, examination supplies, and laboratory instruments ready for dispatch.
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <Button
-                  variant="outline-teal"
-                  size="sm"
-                  onClick={() => onNavigate('shop', { badge: 'Bestseller' })}
-                >
-                  Bestsellers
-                </Button>
-                <Button
-                  variant="outline-teal"
-                  size="sm"
-                  onClick={() => onNavigate('shop', { badge: 'Popular' })}
-                >
-                  Popular Items
-                </Button>
-              </div>
+      <section className="section" style={{ backgroundColor: 'var(--color-bg)' }}>
+        <div className="container">
+          <div className="section-header">
+            <div>
+              <div className="section-eyebrow">Professional Selection</div>
+              <h2 className="section-title">Featured Products</h2>
+              <p className="section-subtitle">
+                In-demand clinical devices, examination supplies, and laboratory instruments ready for dispatch.
+              </p>
             </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <Button
+                variant="outline-teal"
+                size="sm"
+                onClick={() => onNavigate('shop', { badge: 'Bestseller' })}
+              >
+                Bestsellers
+              </Button>
+              <Button
+                variant="outline-teal"
+                size="sm"
+                onClick={() => onNavigate('shop', { badge: 'Popular' })}
+              >
+                Popular Items
+              </Button>
+            </div>
+          </div>
 
+          {featuredProducts.length > 0 ? (
             <ProductGrid
               products={featuredProducts}
               onSelectProduct={onSelectProduct}
               onQuickView={onQuickView}
             />
-          </div>
-        </section>
-      )}
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px' }}>
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  style={{
+                    backgroundColor: 'var(--color-white)',
+                    borderRadius: 'var(--radius-xl)',
+                    border: '1px solid var(--color-border)',
+                    padding: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px',
+                    boxShadow: 'var(--shadow-xs)',
+                  }}
+                >
+                  <div style={{ width: '100%', height: '180px', backgroundColor: '#F1F5F9', borderRadius: 'var(--radius-lg)' }} />
+                  <div style={{ width: '40%', height: '12px', backgroundColor: '#E2E8F0', borderRadius: '4px' }} />
+                  <div style={{ width: '85%', height: '16px', backgroundColor: '#E2E8F0', borderRadius: '4px' }} />
+                  <div style={{ width: '50%', height: '20px', backgroundColor: '#E2E8F0', borderRadius: '4px', marginTop: '12px' }} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* 1. Established Trust Section */}
       <TrustSection />
