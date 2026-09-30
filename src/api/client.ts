@@ -429,6 +429,16 @@ export async function purgeAllProducts(token: string): Promise<{ message: string
   });
 }
 
+export interface AdminOrderItem {
+  id: number;
+  productId: string;
+  sku: string;
+  productName: string;
+  unitPrice: number;
+  quantity: number;
+  lineTotal: number;
+}
+
 export interface AdminOrder {
   id: string;
   orderNumber: string;
@@ -437,21 +447,43 @@ export interface AdminOrder {
   paymentMethod: string;
   customerName: string;
   customerEmail: string;
+  customerPhone?: string;
+  shippingAddress?: string;
+  shippingAddressLine1?: string;
+  shippingCity?: string;
+  shippingPostcode?: string;
+  shippingCountry?: string;
   clinicName?: string;
   poNumber?: string;
+  paystackReference?: string;
   subtotal: number;
   deliveryFee: number;
   totalAmount: number;
   grandTotalIncVat: number;
   currency: string;
   itemCount: number;
+  items?: AdminOrderItem[];
   createdAt: string;
   updatedAt: string;
 }
 
-export async function fetchAdminOrders(token: string, status?: string): Promise<{ orders: AdminOrder[] }> {
-  const query = status ? `?status=${encodeURIComponent(status)}` : '';
-  return apiFetch<{ orders: AdminOrder[] }>(`/admin/orders${query}`, {
+export async function fetchAdminOrders(
+  token: string,
+  params?: { status?: string; paymentStatus?: string; search?: string }
+): Promise<{ orders: AdminOrder[] }> {
+  const queryParams = new URLSearchParams();
+  if (params?.status && params.status !== 'all') {
+    queryParams.set('status', params.status);
+  }
+  if (params?.paymentStatus && params.paymentStatus !== 'all') {
+    queryParams.set('paymentStatus', params.paymentStatus);
+  }
+  if (params?.search && params.search.trim()) {
+    queryParams.set('search', params.search.trim());
+  }
+
+  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+  return apiFetch<{ orders: AdminOrder[] }>(`/admin/orders${queryString}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 }

@@ -95,6 +95,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [orderFilterStatus, setOrderFilterStatus] = useState<string>('all');
+  const [orderPaymentStatus, setOrderPaymentStatus] = useState<string>('all');
+  const [orderSearch, setOrderSearch] = useState<string>('');
+  const [selectedOrderForDetail, setSelectedOrderForDetail] = useState<AdminOrder | null>(null);
   const [editingDeliveryId, setEditingDeliveryId] = useState<string | null>(null);
   const [deliveryFeeInput, setDeliveryFeeInput] = useState<number>(0);
 
@@ -121,13 +124,22 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
   // Load products and categories when authenticated
   useEffect(() => {
     if (token && currentUser) {
-      loadProducts();
-      loadOrders();
       fetchCategories()
         .then(setCategories)
         .catch(() => {});
     }
   }, [token, currentUser]);
+
+  // Reactive data loader when switching tabs or filters
+  useEffect(() => {
+    if (token && currentUser) {
+      if (activeTab === 'products') {
+        loadProducts();
+      } else if (activeTab === 'orders') {
+        loadOrders();
+      }
+    }
+  }, [token, currentUser, activeTab, orderFilterStatus, orderPaymentStatus, orderSearch]);
 
   const loadProducts = async () => {
     if (!token) return;
@@ -146,8 +158,11 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
     if (!token) return;
     setIsLoadingOrders(true);
     try {
-      const statusParam = orderFilterStatus === 'all' ? undefined : orderFilterStatus;
-      const res = await fetchAdminOrders(token, statusParam);
+      const res = await fetchAdminOrders(token, {
+        status: orderFilterStatus,
+        paymentStatus: orderPaymentStatus,
+        search: orderSearch,
+      });
       setOrders(res.orders);
     } catch (err: any) {
       showToast('Error Loading Orders', err.message);
@@ -828,58 +843,105 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
       {/* TAB 2: CUSTOMER ORDERS */}
       {activeTab === 'orders' && (
         <div>
-          {/* Order Filter Bar */}
+          {/* Order Filter & Search Toolbar */}
           <div style={{
             display: 'flex',
+            flexWrap: 'wrap',
             justifyContent: 'space-between',
             alignItems: 'center',
+            gap: '14px',
             backgroundColor: '#ffffff',
-            padding: '14px 18px',
+            padding: '16px 20px',
             borderRadius: '10px',
             border: '1px solid #e2e8f0',
             marginBottom: '20px'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#475569' }}>Filter by Status:</span>
-              <select
-                value={orderFilterStatus}
-                onChange={(e) => setOrderFilterStatus(e.target.value)}
+            {/* Search Input */}
+            <div style={{ position: 'relative', minWidth: '260px', flex: '1 1 auto' }}>
+              <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <input
+                type="text"
+                placeholder="Search by Order #, Customer, Email, or Phone..."
+                value={orderSearch}
+                onChange={(e) => setOrderSearch(e.target.value)}
                 style={{
-                  padding: '6px 12px',
+                  width: '100%',
+                  padding: '9px 12px 9px 38px',
                   borderRadius: '6px',
                   border: '1px solid #cbd5e1',
-                  fontSize: '0.9rem'
+                  fontSize: '0.875rem'
                 }}
-              >
-                <option value="all">All Orders</option>
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="processing">Processing</option>
-                <option value="dispatched">Dispatched</option>
-                <option value="delivered">Delivered</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
+              />
             </div>
 
-            <button
-              onClick={loadOrders}
-              style={{
-                padding: '6px 14px',
-                backgroundColor: '#f8fafc',
-                color: '#475569',
-                border: '1px solid #cbd5e1',
-                borderRadius: '6px',
-                fontSize: '0.85rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              <RefreshCw size={14} /> Refresh Orders
-            </button>
+            {/* Filter Controls */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>Fulfillment:</span>
+                <select
+                  value={orderFilterStatus}
+                  onChange={(e) => setOrderFilterStatus(e.target.value)}
+                  style={{
+                    padding: '7px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.85rem',
+                    backgroundColor: '#ffffff'
+                  }}
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="pending">Pending</option>
+                  <option value="processing">Processing</option>
+                  <option value="dispatched">Dispatched</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>Payment:</span>
+                <select
+                  value={orderPaymentStatus}
+                  onChange={(e) => setOrderPaymentStatus(e.target.value)}
+                  style={{
+                    padding: '7px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.85rem',
+                    backgroundColor: '#ffffff'
+                  }}
+                >
+                  <option value="all">All Payments</option>
+                  <option value="paid">Paid (Verified)</option>
+                  <option value="pending">Pending</option>
+                  <option value="failed">Failed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              <button
+                onClick={loadOrders}
+                style={{
+                  padding: '7px 14px',
+                  backgroundColor: '#f8fafc',
+                  color: '#475569',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <RefreshCw size={14} className={isLoadingOrders ? 'animate-spin' : ''} /> Refresh
+              </button>
+            </div>
           </div>
 
+          {/* Orders Table */}
           {isLoadingOrders ? (
             <div style={{ padding: '60px', textAlign: 'center', color: '#64748b' }}>
               <RefreshCw size={28} className="animate-spin" style={{ margin: '0 auto 12px auto' }} />
@@ -895,11 +957,32 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
             }}>
               <ShoppingBag size={48} style={{ color: '#94a3b8', margin: '0 auto 16px auto' }} />
               <h3 style={{ fontSize: '1.2rem', color: '#1e293b', margin: '0 0 8px 0' }}>
-                No Orders Found
+                No Orders Match Filter Criteria
               </h3>
-              <p style={{ color: '#64748b', margin: 0 }}>
-                Orders placed through the customer storefront will appear here.
+              <p style={{ color: '#64748b', margin: '0 0 16px 0', fontSize: '0.9rem' }}>
+                Try resetting your status filters or searching with a different keyword.
               </p>
+              {(orderFilterStatus !== 'all' || orderPaymentStatus !== 'all' || orderSearch !== '') && (
+                <button
+                  onClick={() => {
+                    setOrderFilterStatus('all');
+                    setOrderPaymentStatus('all');
+                    setOrderSearch('');
+                  }}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#0d9488',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Reset All Filters
+                </button>
+              )}
             </div>
           ) : (
             <div style={{
@@ -908,30 +991,52 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
               border: '1px solid #e2e8f0',
               overflowX: 'auto'
             }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 600 }}>
                     <th style={{ padding: '12px 16px' }}>Order #</th>
-                    <th style={{ padding: '12px 16px' }}>Customer</th>
-                    <th style={{ padding: '12px 16px' }}>Subtotal</th>
-                    <th style={{ padding: '12px 16px' }}>Delivery Fee</th>
+                    <th style={{ padding: '12px 16px' }}>Date</th>
+                    <th style={{ padding: '12px 16px' }}>Customer Details</th>
+                    <th style={{ padding: '12px 16px' }}>Items</th>
+                    <th style={{ padding: '12px 16px' }}>Delivery</th>
                     <th style={{ padding: '12px 16px' }}>Total Amount</th>
                     <th style={{ padding: '12px 16px' }}>Payment</th>
-                    <th style={{ padding: '12px 16px' }}>Order Status</th>
+                    <th style={{ padding: '12px 16px' }}>Fulfillment</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {orders.map((ord) => (
                     <tr key={ord.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '12px 16px', fontWeight: 700, color: '#0f172a' }}>
+                      <td style={{ padding: '12px 16px', fontWeight: 700, color: '#0f172a', fontFamily: 'monospace' }}>
                         {ord.orderNumber}
+                      </td>
+                      <td style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                        {new Date(ord.createdAt).toLocaleDateString('en-GB', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
                       </td>
                       <td style={{ padding: '12px 16px' }}>
                         <div style={{ fontWeight: 600, color: '#1e293b' }}>{ord.customerName}</div>
-                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{ord.customerEmail}</div>
+                        <div style={{ fontSize: '0.78rem', color: '#64748b' }}>{ord.customerEmail}</div>
+                        {ord.customerPhone && (
+                          <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>📞 {ord.customerPhone}</div>
+                        )}
                       </td>
                       <td style={{ padding: '12px 16px', color: '#475569' }}>
-                        {formatNaira(ord.subtotal)}
+                        <span style={{
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          backgroundColor: '#f1f5f9',
+                          fontWeight: 600,
+                          fontSize: '0.75rem'
+                        }}>
+                          {ord.itemCount || (ord.items ? ord.items.length : 1)} {ord.itemCount === 1 ? 'item' : 'items'}
+                        </span>
                       </td>
                       <td style={{ padding: '12px 16px' }}>
                         {editingDeliveryId === ord.id ? (
@@ -941,7 +1046,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
                               min={0}
                               value={deliveryFeeInput}
                               onChange={(e) => setDeliveryFeeInput(parseFloat(e.target.value) || 0)}
-                              style={{ width: '80px', padding: '4px 6px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                              style={{ width: '75px', padding: '4px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
                             />
                             <button
                               onClick={() => handleUpdateDeliveryFee(ord.id)}
@@ -988,10 +1093,14 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
                           padding: '4px 8px',
                           borderRadius: '12px',
                           fontSize: '0.75rem',
-                          fontWeight: 600,
-                          backgroundColor: ord.paymentStatus === 'paid' ? '#dcfce7' : '#fef3c7',
-                          color: ord.paymentStatus === 'paid' ? '#166534' : '#92400e'
+                          fontWeight: 700,
+                          backgroundColor: ord.paymentStatus === 'paid' ? '#dcfce7' : ord.paymentStatus === 'cancelled' ? '#fee2e2' : '#fef3c7',
+                          color: ord.paymentStatus === 'paid' ? '#166534' : ord.paymentStatus === 'cancelled' ? '#991b1b' : '#92400e',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
                         }}>
+                          {ord.paymentStatus === 'paid' && <CheckCircle2 size={12} />}
                           {ord.paymentStatus.toUpperCase()}
                         </span>
                       </td>
@@ -1003,7 +1112,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
                             padding: '4px 8px',
                             borderRadius: '4px',
                             border: '1px solid #cbd5e1',
-                            fontSize: '0.85rem'
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            backgroundColor: ord.status === 'confirmed' ? '#f0fdf4' : ord.status === 'cancelled' ? '#fef2f2' : '#ffffff'
                           }}
                         >
                           <option value="pending">Pending</option>
@@ -1014,12 +1125,171 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
                           <option value="cancelled">Cancelled</option>
                         </select>
                       </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                        <button
+                          onClick={() => setSelectedOrderForDetail(ord)}
+                          style={{
+                            padding: '6px 12px',
+                            backgroundColor: '#0d9488',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <Eye size={14} /> Details
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
+        </div>
+      )}
+
+      {/* MODAL: ORDER DETAILS FLYOUT */}
+      {selectedOrderForDetail && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '12px',
+            maxWidth: '680px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            padding: '28px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', borderBottom: '1px solid #e2e8f0', paddingBottom: '16px' }}>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>ORDER SPECIFICATION</div>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', margin: '4px 0 0 0', fontFamily: 'monospace' }}>
+                  {selectedOrderForDetail.orderNumber}
+                </h2>
+              </div>
+              <button
+                onClick={() => setSelectedOrderForDetail(null)}
+                style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}
+              >
+                <X size={22} />
+              </button>
+            </div>
+
+            {/* Customer & Payment Info Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '8px', marginBottom: '20px', fontSize: '0.85rem' }}>
+              <div>
+                <div style={{ color: '#64748b', marginBottom: '4px' }}>Customer Details</div>
+                <div style={{ fontWeight: 700, color: '#0f172a' }}>{selectedOrderForDetail.customerName}</div>
+                <div style={{ color: '#334155' }}>{selectedOrderForDetail.customerEmail}</div>
+                {selectedOrderForDetail.customerPhone && (
+                  <div style={{ color: '#475569' }}>📞 {selectedOrderForDetail.customerPhone}</div>
+                )}
+                {selectedOrderForDetail.clinicName && (
+                  <div style={{ color: '#0d9488', fontWeight: 600, marginTop: '2px' }}>🏥 {selectedOrderForDetail.clinicName}</div>
+                )}
+              </div>
+
+              <div>
+                <div style={{ color: '#64748b', marginBottom: '4px' }}>Shipping Address</div>
+                <div style={{ color: '#1e293b', lineHeight: 1.4 }}>
+                  {selectedOrderForDetail.shippingAddress || `${selectedOrderForDetail.shippingAddressLine1 || ''}, ${selectedOrderForDetail.shippingCity || ''} (${selectedOrderForDetail.shippingPostcode || ''})`}
+                </div>
+                {selectedOrderForDetail.paystackReference && (
+                  <div style={{ marginTop: '8px', fontSize: '0.78rem', color: '#64748b' }}>
+                    Paystack Ref: <span style={{ fontFamily: 'monospace', color: '#0f172a' }}>{selectedOrderForDetail.paystackReference}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Items Table */}
+            <div style={{ marginBottom: '20px' }}>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', margin: '0 0 10px 0' }}>Ordered Items</h4>
+              {selectedOrderForDetail.items && selectedOrderForDetail.items.length > 0 ? (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#f1f5f9', color: '#475569', textAlign: 'left' }}>
+                      <th style={{ padding: '8px 10px' }}>Product</th>
+                      <th style={{ padding: '8px 10px' }}>SKU</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'center' }}>Qty</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'right' }}>Price</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'right' }}>Line Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedOrderForDetail.items.map((item, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '10px', fontWeight: 600, color: '#0f172a' }}>{item.productName}</td>
+                        <td style={{ padding: '10px', fontFamily: 'monospace', color: '#64748b' }}>{item.sku}</td>
+                        <td style={{ padding: '10px', textAlign: 'center', color: '#334155' }}>{item.quantity}</td>
+                        <td style={{ padding: '10px', textAlign: 'right', color: '#334155' }}>{formatNaira(item.unitPrice)}</td>
+                        <td style={{ padding: '10px', textAlign: 'right', fontWeight: 700, color: '#0f172a' }}>{formatNaira(item.lineTotal)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div style={{ padding: '12px', backgroundColor: '#f8fafc', borderRadius: '6px', color: '#64748b', fontSize: '0.85rem' }}>
+                  Standard Clinical Order Line Item Allocation
+                </div>
+              )}
+            </div>
+
+            {/* Financial Summary */}
+            <div style={{ backgroundColor: '#f8fafc', padding: '14px 18px', borderRadius: '8px', marginBottom: '20px', fontSize: '0.875rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', color: '#64748b' }}>
+                <span>Items Subtotal:</span>
+                <span style={{ fontWeight: 600, color: '#334155' }}>{formatNaira(selectedOrderForDetail.subtotal)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', color: '#64748b' }}>
+                <span>Delivery Fee:</span>
+                <span style={{ fontWeight: 600, color: '#334155' }}>{formatNaira(selectedOrderForDetail.deliveryFee)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #cbd5e1', paddingTop: '8px', fontSize: '1.05rem', fontWeight: 800 }}>
+                <span style={{ color: '#0f172a' }}>Total Amount:</span>
+                <span style={{ color: '#0d9488' }}>{formatNaira(selectedOrderForDetail.totalAmount)}</span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                onClick={() => setSelectedOrderForDetail(null)}
+                style={{
+                  padding: '9px 18px',
+                  backgroundColor: '#0d9488',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Close Details
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

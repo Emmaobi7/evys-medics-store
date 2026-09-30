@@ -326,17 +326,63 @@ adminRouter.post('/products/purge-all', async (req: Request, res: Response, next
 adminRouter.get('/orders', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const status = req.query.status as string | undefined;
-    const whereSql = status ? 'WHERE status = $1' : '';
-    const params = status ? [status] : [];
+    const paymentStatus = req.query.paymentStatus as string | undefined;
+    const search = req.query.search as string | undefined;
+
+    const conditions: string[] = [];
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    if (status && status !== 'all') {
+      conditions.push(`o.status = $${paramIndex++}`);
+      params.push(status);
+    }
+
+    if (paymentStatus && paymentStatus !== 'all') {
+      conditions.push(`o.payment_status = $${paramIndex++}`);
+      params.push(paymentStatus);
+    }
+
+    if (search && search.trim()) {
+      conditions.push(
+        `(o.order_number ILIKE $${paramIndex} OR o.customer_name ILIKE $${paramIndex} OR o.customer_email ILIKE $${paramIndex} OR o.customer_phone ILIKE $${paramIndex} OR o.clinic_name ILIKE $${paramIndex})`
+      );
+      params.push(`%${search.trim()}%`);
+      paramIndex++;
+    }
+
+    const whereSql = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const sql = `
       SELECT 
         o.*,
-        COUNT(oi.id)::int AS item_count
+        COALESCE(
+          (
+            SELECT json_agg(
+              json_build_object(
+                'id', oi.id,
+                'productId', oi.product_id,
+                'sku', oi.sku_snapshot,
+                'productName', oi.product_name_snapshot,
+                'unitPrice', oi.unit_price_ex_vat,
+                'quantity', oi.quantity,
+                'lineTotal', oi.line_total_ex_vat
+              )
+            )
+            FROM order_items oi
+            WHERE oi.order_id = o.id
+          ),
+          '[]'::json
+        ) AS items,
+        (
+          SELECT p.provider_reference 
+          FROM payments p 
+          WHERE p.order_id = o.id 
+          ORDER BY p.created_at DESC 
+          LIMIT 1
+        ) AS paystack_reference
       FROM orders o
-      LEFT JOIN order_items oi ON oi.order_id = o.id
       ${whereSql}
-      GROUP BY o.id
       ORDER BY o.created_at DESC;
     `;
     const { rows } = await query(sql, params);
@@ -346,6 +392,7 @@ adminRouter.get('/orders', async (req: Request, res: Response, next: NextFunctio
         const subtotal = parseFloat(r.subtotal_ex_vat || '0');
         const deliveryFee = parseFloat(r.delivery_fee ?? r.shipping_ex_vat ?? '0');
         const totalAmount = parseFloat(r.grand_total_inc_vat || '0');
+        const items = Array.isArray(r.items) ? r.items : [];
 
         return {
           id: r.id,
@@ -355,14 +402,22 @@ adminRouter.get('/orders', async (req: Request, res: Response, next: NextFunctio
           paymentMethod: r.payment_method,
           customerName: r.customer_name,
           customerEmail: r.customer_email,
+          customerPhone: r.customer_phone,
+          shippingAddress: `${r.shipping_address_line1}, ${r.shipping_city} (${r.shipping_postcode})`,
+          shippingAddressLine1: r.shipping_address_line1,
+          shippingCity: r.shipping_city,
+          shippingPostcode: r.shipping_postcode,
+          shippingCountry: r.shipping_country,
           clinicName: r.clinic_name,
           poNumber: r.po_number,
+          paystackReference: r.paystack_reference,
           subtotal,
           deliveryFee,
           totalAmount,
           grandTotalIncVat: totalAmount,
           currency: r.currency || 'NGN',
-          itemCount: r.item_count,
+          itemCount: items.length,
+          items,
           createdAt: r.created_at,
           updatedAt: r.updated_at,
         };
