@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, User, ArrowRight, ShieldCheck, UserPlus, KeyRound, CheckCircle2 } from 'lucide-react';
+import { X, User, ArrowRight, ShieldCheck, UserPlus, KeyRound, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import { Button } from './Button';
 import { useToast } from '../context/ToastContext';
 import { loginUser, registerUser, requestPasswordReset } from '../api/client';
@@ -21,6 +21,8 @@ export const AccountModal: React.FC<AccountModalProps> = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [forgotSubmitted, setForgotSubmitted] = useState(false);
@@ -31,6 +33,8 @@ export const AccountModal: React.FC<AccountModalProps> = ({
       setMode(initialMode);
       setErrorMessage(null);
       setForgotSubmitted(false);
+      setShowPassword(false);
+      setShowConfirmPassword(false);
     }
   }, [isOpen, initialMode]);
 
@@ -413,21 +417,45 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                     </button>
                   )}
                 </div>
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--color-border)',
-                    fontSize: '0.9375rem',
-                    boxSizing: 'border-box',
-                  }}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 42px 10px 14px',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--color-border)',
+                      fontSize: '0.9375rem',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--color-muted)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '4px',
+                    }}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
 
               {mode === 'register' && (
@@ -435,21 +463,45 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                   <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
                     Confirm Password *
                   </label>
-                  <input
-                    type="password"
-                    required
-                    placeholder="••••••••"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid var(--color-border)',
-                      fontSize: '0.9375rem',
-                      boxSizing: 'border-box',
-                    }}
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      required
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 42px 10px 14px',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--color-border)',
+                        fontSize: '0.9375rem',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: '10px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: 'var(--color-muted)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '4px',
+                      }}
+                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                      tabIndex={-1}
+                    >
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
               )}
 

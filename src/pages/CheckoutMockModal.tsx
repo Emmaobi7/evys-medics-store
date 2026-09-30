@@ -12,6 +12,8 @@ import {
   User,
   UserPlus,
   CheckCircle2,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import {
@@ -45,6 +47,8 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authConfirmPassword, setAuthConfirmPassword] = useState('');
+  const [showAuthPassword, setShowAuthPassword] = useState(false);
+  const [showAuthConfirmPassword, setShowAuthConfirmPassword] = useState(false);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -423,21 +427,45 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
                     <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
                       Password * {authMode === 'register' && <span style={{ fontWeight: 400, color: 'var(--color-muted)' }}>(min 6 characters)</span>}
                     </label>
-                    <input
-                      type="password"
-                      required
-                      placeholder="••••••••"
-                      value={authPassword}
-                      onChange={(e) => setAuthPassword(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: 'var(--radius-md)',
-                        border: '1px solid var(--color-border)',
-                        fontSize: '0.9375rem',
-                        boxSizing: 'border-box',
-                      }}
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showAuthPassword ? 'text' : 'password'}
+                        required
+                        placeholder="••••••••"
+                        value={authPassword}
+                        onChange={(e) => setAuthPassword(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '10px 42px 10px 14px',
+                          borderRadius: 'var(--radius-md)',
+                          border: '1px solid var(--color-border)',
+                          fontSize: '0.9375rem',
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowAuthPassword(!showAuthPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: '10px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: 'var(--color-muted)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: '4px',
+                        }}
+                        aria-label={showAuthPassword ? 'Hide password' : 'Show password'}
+                        tabIndex={-1}
+                      >
+                        {showAuthPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                   </div>
 
                   {authMode === 'register' && (
@@ -445,21 +473,45 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
                       <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
                         Confirm Password *
                       </label>
-                      <input
-                        type="password"
-                        required
-                        placeholder="••••••••"
-                        value={authConfirmPassword}
-                        onChange={(e) => setAuthConfirmPassword(e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '10px 14px',
-                          borderRadius: 'var(--radius-md)',
-                          border: '1px solid var(--color-border)',
-                          fontSize: '0.9375rem',
-                          boxSizing: 'border-box',
-                        }}
-                      />
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          type={showAuthConfirmPassword ? 'text' : 'password'}
+                          required
+                          placeholder="••••••••"
+                          value={authConfirmPassword}
+                          onChange={(e) => setAuthConfirmPassword(e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '10px 42px 10px 14px',
+                            borderRadius: 'var(--radius-md)',
+                            border: '1px solid var(--color-border)',
+                            fontSize: '0.9375rem',
+                            boxSizing: 'border-box',
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowAuthConfirmPassword(!showAuthConfirmPassword)}
+                          style={{
+                            position: 'absolute',
+                            right: '10px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'var(--color-muted)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '4px',
+                          }}
+                          aria-label={showAuthConfirmPassword ? 'Hide password' : 'Show password'}
+                          tabIndex={-1}
+                        >
+                          {showAuthConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
                     </div>
                   )}
 

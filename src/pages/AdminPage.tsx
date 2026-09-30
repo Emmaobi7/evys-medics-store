@@ -15,6 +15,7 @@ import {
   CheckCircle2, 
   X,
   Eye,
+  EyeOff,
   LogOut,
   ArrowLeft,
   MessageSquare,
@@ -67,6 +68,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
   // Login state (if not authenticated)
   const [loginEmail, setLoginEmail] = useState('admin@evysmedics.co.uk');
   const [loginPassword, setLoginPassword] = useState('EvysAdminPass2026!');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -602,19 +604,44 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
               <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
                 Password
               </label>
-              <input
-                type="password"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                required
-                style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
-                  fontSize: '0.95rem'
-                }}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showLoginPassword ? 'text' : 'password'}
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '10px 42px 10px 14px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.95rem',
+                    boxSizing: 'border-box',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#64748b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '4px',
+                  }}
+                  aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
+                  tabIndex={-1}
+                >
+                  {showLoginPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <button

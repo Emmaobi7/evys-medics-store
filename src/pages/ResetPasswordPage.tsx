@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, ArrowRight, CheckCircle2, AlertCircle, KeyRound } from 'lucide-react';
+import { Lock, ArrowRight, CheckCircle2, AlertCircle, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { Button } from '../components/Button';
 import { resetPassword } from '../api/client';
 
@@ -15,6 +15,8 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
   const [token, setToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -213,42 +215,90 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
                   New Password * <span style={{ fontWeight: 400, color: 'var(--color-muted)' }}>(min 6 characters)</span>
                 </label>
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--color-border)',
-                    fontSize: '0.9375rem',
-                    boxSizing: 'border-box',
-                  }}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    required
+                    placeholder="••••••••"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 42px 10px 14px',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--color-border)',
+                      fontSize: '0.9375rem',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--color-muted)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '4px',
+                    }}
+                    aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                    tabIndex={-1}
+                  >
+                    {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
                   Confirm New Password *
                 </label>
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--color-border)',
-                    fontSize: '0.9375rem',
-                    boxSizing: 'border-box',
-                  }}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    required
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 42px 10px 14px',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--color-border)',
+                      fontSize: '0.9375rem',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--color-muted)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '4px',
+                    }}
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    tabIndex={-1}
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
 
               <Button
