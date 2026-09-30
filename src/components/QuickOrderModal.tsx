@@ -241,7 +241,7 @@ export const QuickOrderModal: React.FC<QuickOrderModalProps> = ({
         inset: 0,
         backgroundColor: 'rgba(11, 23, 38, 0.75)',
         backdropFilter: 'blur(6px)',
-        zIndex: 150,
+        zIndex: 10000,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

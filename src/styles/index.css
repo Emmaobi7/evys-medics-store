@@ -1257,7 +1257,7 @@ button, input, select, textarea {
   inset: 0;
   background-color: rgba(11, 23, 38, 0.6);
   backdrop-filter: blur(4px);
-  z-index: 100;
+  z-index: 10000;
   opacity: 0;
   visibility: hidden;
   transition: all var(--transition-normal);
@@ -1276,7 +1276,7 @@ button, input, select, textarea {
   width: 100%;
   max-width: 400px;
   background-color: var(--color-white);
-  z-index: 101;
+  z-index: 10001;
   box-shadow: var(--shadow-xl);
   display: flex;
   flex-direction: column;
@@ -1660,7 +1660,7 @@ button, input, select, textarea {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  z-index: 200;
+  z-index: 10002;
   display: flex;
   flex-direction: column;
   gap: 8px;

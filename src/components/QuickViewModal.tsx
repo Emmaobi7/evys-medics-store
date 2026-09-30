@@ -26,7 +26,7 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({
         inset: 0,
         backgroundColor: 'rgba(11, 23, 38, 0.7)',
         backdropFilter: 'blur(6px)',
-        zIndex: 150,
+        zIndex: 10000,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

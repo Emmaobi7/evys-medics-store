@@ -695,7 +695,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
             inset: 0,
             backgroundColor: 'rgba(11, 23, 38, 0.6)',
             backdropFilter: 'blur(4px)',
-            zIndex: 120,
+            zIndex: 10000,
             display: 'flex',
             justifyContent: 'flex-end',
           }}
