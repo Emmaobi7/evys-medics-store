@@ -19,11 +19,12 @@ import { ContactPage } from './pages/ContactPage';
 import { CheckoutMockModal } from './pages/CheckoutMockModal';
 import { PaystackCallbackPage } from './pages/PaystackCallbackPage';
 import { AdminPage } from './pages/AdminPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 
 import { Product } from './types';
 import { PRODUCTS } from './data/products';
 
-const getPageFromPath = (): 'home' | 'shop' | 'product' | 'cart' | 'about' | 'contact' | 'callback' | 'admin' => {
+const getPageFromPath = (): 'home' | 'shop' | 'product' | 'cart' | 'about' | 'contact' | 'callback' | 'admin' | 'reset-password' => {
   if (typeof window === 'undefined') return 'home';
   const path = window.location.pathname;
   const search = window.location.search;
@@ -32,6 +33,7 @@ const getPageFromPath = (): 'home' | 'shop' | 'product' | 'cart' | 'about' | 'co
   if (path === '/cart') return 'cart';
   if (path === '/about') return 'about';
   if (path === '/contact') return 'contact';
+  if (path === '/reset-password') return 'reset-password';
   if (path === '/checkout/callback' || search.includes('reference=') || search.includes('trxref=')) {
     return 'callback';
   }
@@ -39,7 +41,7 @@ const getPageFromPath = (): 'home' | 'shop' | 'product' | 'cart' | 'about' | 'co
 };
 
 function AppContent() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'shop' | 'product' | 'cart' | 'about' | 'contact' | 'callback' | 'admin'>(getPageFromPath);
+  const [currentPage, setCurrentPage] = useState<'home' | 'shop' | 'product' | 'cart' | 'about' | 'contact' | 'callback' | 'admin' | 'reset-password'>(getPageFromPath);
   const [pageParams, setPageParams] = useState<Record<string, any>>({});
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
@@ -70,6 +72,7 @@ function AppContent() {
     else if (page === 'about') targetPath = '/about';
     else if (page === 'contact') targetPath = '/contact';
     else if (page === 'callback') targetPath = '/checkout/callback';
+    else if (page === 'reset-password') targetPath = '/reset-password';
 
     if (typeof window !== 'undefined' && window.history?.pushState) {
       if (window.location.pathname !== targetPath) {
@@ -177,6 +180,13 @@ function AppContent() {
           <AdminPage
             onNavigateHome={() => handleNavigate('home')}
             onNavigateShop={() => handleNavigate('shop')}
+          />
+        )}
+
+        {currentPage === 'reset-password' && (
+          <ResetPasswordPage
+            onNavigateHome={() => handleNavigate('home')}
+            onOpenSignIn={() => setIsAccountModalOpen(true)}
           />
         )}
       </main>

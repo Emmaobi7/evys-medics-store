@@ -328,6 +328,20 @@ export async function fetchCurrentUser(token: string): Promise<{ user: AuthUser 
   });
 }
 
+export async function requestPasswordReset(email: string, origin?: string): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email, origin: origin || window.location.origin }),
+  });
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, newPassword }),
+  });
+}
+
 // ----------------------------------------------------
 // Admin API Services
 // ----------------------------------------------------

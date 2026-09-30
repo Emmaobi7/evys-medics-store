@@ -258,3 +258,133 @@ Thank you for shopping with Evy's Medics Store.
     };
   }
 }
+
+export interface SendResetEmailResult {
+  success: boolean;
+  messageId?: string;
+  recipient: string;
+  mode: 'smtp' | 'console_logged';
+}
+
+/**
+ * Sends a secure password reset email with a verification link and expiration notice
+ */
+export async function sendPasswordResetEmail(
+  recipientEmail: string,
+  resetToken: string,
+  resetUrl: string
+): Promise<SendResetEmailResult> {
+  try {
+    const fromAddress =
+      process.env.EMAIL_FROM ||
+      (process.env.SMTP_USER && process.env.SMTP_USER.includes('@')
+        ? `Evy's Medics Store <${process.env.SMTP_USER}>`
+        : 'Evy\'s Medics Store <admin@evysmedics.co.uk>');
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Reset Your Password - Evy's Medics</title>
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #F8FAFC; margin: 0; padding: 24px; color: #0F172A;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 560px; margin: 0 auto; background: #FFFFFF; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="background-color: #0D9488; padding: 28px 32px; text-align: center; color: #FFFFFF;">
+              <h1 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">EVY'S MEDICS STORE</h1>
+              <p style="margin: 6px 0 0 0; font-size: 14px; opacity: 0.9;">Password Reset Request</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding: 32px;">
+              <h2 style="margin: 0 0 12px 0; font-size: 18px; color: #0F172A;">Hello,</h2>
+              <p style="font-size: 15px; line-height: 1.6; color: #334155; margin-bottom: 24px;">
+                We received a request to reset the password for your Evy's Medics Store account associated with <strong>${recipientEmail}</strong>.
+              </p>
+
+              <div style="text-align: center; margin: 32px 0;">
+                <a href="${resetUrl}" style="background-color: #0D9488; color: #FFFFFF; padding: 14px 28px; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 8px; display: inline-block; box-shadow: 0 2px 4px rgba(13, 148, 136, 0.2);">
+                  Reset Your Password
+                </a>
+              </div>
+
+              <p style="font-size: 14px; line-height: 1.6; color: #64748B; margin-bottom: 16px;">
+                Or copy and paste this link into your browser:
+                <br>
+                <a href="${resetUrl}" style="color: #0D9488; word-break: break-all; font-size: 13px;">${resetUrl}</a>
+              </p>
+
+              <div style="background-color: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 14px 16px; margin-top: 24px; font-size: 13px; color: #92400E; line-height: 1.5;">
+                <strong>Security Notice:</strong> This password reset link is valid for <strong>1 hour</strong>. If you did not request a password reset, you can safely ignore this email; your account remains secure.
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #0F172A; color: #94A3B8; padding: 20px 32px; text-align: center; font-size: 12px;">
+              &copy; ${new Date().getFullYear()} Evy's Medics Store. Professional Healthcare & Medical Supplies.
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const textContent = `
+EVY'S MEDICS STORE — PASSWORD RESET
+====================================
+We received a request to reset the password for ${recipientEmail}.
+
+To reset your password, visit the following link:
+${resetUrl}
+
+This link will expire in 1 hour. If you did not request this, please ignore this email.
+    `.trim();
+
+    const transporter = getEmailTransporter();
+
+    if (transporter) {
+      const info = await transporter.sendMail({
+        from: fromAddress,
+        to: recipientEmail,
+        subject: "Reset Your Password | Evy's Medics",
+        text: textContent,
+        html: htmlContent,
+      });
+
+      console.log(`[Email Service] Sent password reset email via SMTP to ${recipientEmail} (Message ID: ${info.messageId})`);
+      return {
+        success: true,
+        messageId: info.messageId,
+        recipient: recipientEmail,
+        mode: 'smtp',
+      };
+    } else {
+      console.log(`\n========================================================`);
+      console.log(`📧 [EMAIL DISPATCH SIMULATION] Password Reset`);
+      console.log(`To: ${recipientEmail}`);
+      console.log(`Reset URL: ${resetUrl}`);
+      console.log(`Token: ${resetToken}`);
+      console.log(`========================================================\n`);
+
+      return {
+        success: true,
+        recipient: recipientEmail,
+        mode: 'console_logged',
+      };
+    }
+  } catch (error: any) {
+    console.error(`[Email Service Error] Failed to send password reset email to ${recipientEmail}:`, error.message);
+    return {
+      success: false,
+      recipient: recipientEmail,
+      mode: 'console_logged',
+    };
+  }
+}
+

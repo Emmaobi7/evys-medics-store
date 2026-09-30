@@ -1,9 +1,12 @@
+import crypto from 'crypto';
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { query } from '../db/connection';
 import { validate } from '../middleware/validate';
 import { requireAuth } from '../middleware/auth';
 import { comparePassword, generateToken, hashPassword } from '../utils/auth';
+import { sendPasswordResetEmail } from '../services/emailService';
+import { config } from '../config/env';
 import { AppError } from '../middleware/errorHandler';
 
 export const authRouter = Router();
@@ -19,6 +22,20 @@ const registerSchema = z.object({
   body: z.object({
     email: z.string().email('Valid email address is required'),
     password: z.string().min(6, 'Password must be at least 6 characters long'),
+  }),
+});
+
+const forgotPasswordSchema = z.object({
+  body: z.object({
+    email: z.string().email('Valid email address is required'),
+    origin: z.string().url('Invalid origin format').optional(),
+  }),
+});
+
+const resetPasswordSchema = z.object({
+  body: z.object({
+    token: z.string().min(1, 'Reset token is required'),
+    newPassword: z.string().min(6, 'New password must be at least 6 characters long'),
   }),
 });
 
@@ -170,3 +187,134 @@ authRouter.get(
     }
   }
 );
+
+/**
+ * POST /api/v1/auth/forgot-password
+ * Initiate password reset request and dispatch secure verification email
+ */
+authRouter.post(
+  '/forgot-password',
+  validate(forgotPasswordSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { email, origin } = req.body;
+      const normalizedEmail = email.toLowerCase().trim();
+
+      // 1. Look up user
+      const userRes = await query<any>(
+        'SELECT id, email FROM users WHERE LOWER(email) = $1 LIMIT 1;',
+        [normalizedEmail]
+      );
+
+      // Generic response message preventing account enumeration
+      const genericMessage =
+        'If an account is associated with this email address, password reset instructions have been dispatched.';
+
+      if (userRes.rows.length === 0) {
+        return res.status(200).json({ message: genericMessage });
+      }
+
+      const user = userRes.rows[0];
+
+      // 2. Generate cryptographically secure token
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour validity
+
+      // 3. Store hashed token in database
+      await query(
+        `
+        INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, used, created_at)
+        VALUES ($1, $2, $3, FALSE, NOW());
+        `,
+        [user.id, tokenHash, expiresAt.toISOString()]
+      );
+
+      // 4. Construct reset URL
+      const frontendBase =
+        origin ||
+        config.corsOrigins[0] ||
+        'https://mason-appointments-wales-dayton.trycloudflare.com';
+      const resetUrl = `${frontendBase}/reset-password?token=${rawToken}`;
+
+      // 5. Asynchronously dispatch password reset email
+      sendPasswordResetEmail(user.email, rawToken, resetUrl).catch((err) => {
+        console.error('[Forgot Password Email Error]:', err.message);
+      });
+
+      res.status(200).json({ message: genericMessage });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * POST /api/v1/auth/reset-password
+ * Verify reset token and set new password
+ */
+authRouter.post(
+  '/reset-password',
+  validate(resetPasswordSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { token, newPassword } = req.body;
+      const tokenHash = crypto.createHash('sha256').update(token.trim()).digest('hex');
+
+      // 1. Validate token
+      const tokenRes = await query<any>(
+        `
+        SELECT id, user_id, expires_at, used
+        FROM password_reset_tokens
+        WHERE token_hash = $1
+        LIMIT 1;
+        `,
+        [tokenHash]
+      );
+
+      if (tokenRes.rows.length === 0) {
+        throw new AppError('Invalid or expired password reset link. Please request a new one.', 400);
+      }
+
+      const resetRecord = tokenRes.rows[0];
+
+      if (resetRecord.used) {
+        throw new AppError('This password reset link has already been used. Please request a new one.', 400);
+      }
+
+      if (new Date(resetRecord.expires_at) < new Date()) {
+        throw new AppError('This password reset link has expired. Please request a new one.', 400);
+      }
+
+      // 2. Hash new password
+      const passwordHash = await hashPassword(newPassword);
+
+      // 3. Update user password
+      await query(
+        `
+        UPDATE users
+        SET password_hash = $1, updated_at = NOW()
+        WHERE id = $2;
+        `,
+        [passwordHash, resetRecord.user_id]
+      );
+
+      // 4. Invalidate used token
+      await query(
+        `
+        UPDATE password_reset_tokens
+        SET used = TRUE
+        WHERE id = $1;
+        `,
+        [resetRecord.id]
+      );
+
+      res.status(200).json({
+        message: 'Password has been successfully reset. You can now sign in with your new password.',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
