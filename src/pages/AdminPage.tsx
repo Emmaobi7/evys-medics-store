@@ -694,7 +694,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
   // Authenticated Admin Portal UI
   // ----------------------------------------------------
   return (
-    <div style={{ maxWidth: '1380px', margin: '0 auto', padding: '32px 20px 80px 20px' }}>
+    <div style={{ maxWidth: '1380px', margin: '0 auto', padding: '24px 16px 80px 16px' }}>
       {/* Top Header Bar */}
       <div style={{
         display: 'flex',
@@ -702,12 +702,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
         justifyContent: 'space-between',
         alignItems: 'center',
         gap: '16px',
-        paddingBottom: '24px',
+        paddingBottom: '20px',
         borderBottom: '1px solid #e2e8f0',
-        marginBottom: '28px'
+        marginBottom: '24px'
       }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ minWidth: '220px', flex: '1 1 auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <span style={{
               backgroundColor: '#012ea2',
               color: '#ffffff',
@@ -718,25 +718,25 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
             }}>
               ADMIN
             </span>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+            <h1 style={{ fontSize: 'clamp(1.25rem, 3.5vw, 1.75rem)', fontWeight: 800, color: '#0f172a', margin: 0 }}>
               Evy’s Management Console
             </h1>
           </div>
-          <p style={{ fontSize: '0.9rem', color: '#64748b', margin: '4px 0 0 0' }}>
+          <p style={{ fontSize: '0.875rem', color: '#64748b', margin: '4px 0 0 0', wordBreak: 'break-all' }}>
             Logged in as <strong>{currentUser.email}</strong>
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <button
             onClick={onNavigateShop}
             style={{
-              padding: '8px 16px',
+              padding: '8px 14px',
               backgroundColor: '#f1f5f9',
               color: '#334155',
               border: '1px solid #cbd5e1',
               borderRadius: '6px',
-              fontSize: '0.875rem',
+              fontSize: '0.85rem',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
@@ -750,12 +750,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
           <button
             onClick={handleLogout}
             style={{
-              padding: '8px 16px',
+              padding: '8px 14px',
               backgroundColor: '#fee2e2',
               color: '#991b1b',
               border: '1px solid #fecaca',
               borderRadius: '6px',
-              fontSize: '0.875rem',
+              fontSize: '0.85rem',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
@@ -769,21 +769,35 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
       </div>
 
       {/* Main Tabs */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+      <div style={{
+        display: 'flex',
+        gap: '8px',
+        overflowX: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        paddingBottom: '8px',
+        marginBottom: '24px',
+        borderBottom: '1px solid #e2e8f0',
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none'
+      }}>
         <button
           onClick={() => setActiveTab('products')}
           style={{
-            padding: '10px 20px',
+            padding: '10px 18px',
             borderRadius: '8px',
             border: 'none',
-            backgroundColor: activeTab === 'products' ? '#012ea2' : '#f8fafc',
+            backgroundColor: activeTab === 'products' ? '#012ea2' : '#f1f5f9',
             color: activeTab === 'products' ? '#ffffff' : '#475569',
             fontWeight: 700,
-            fontSize: '0.95rem',
+            fontSize: '0.9rem',
             cursor: 'pointer',
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: '8px',
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
+            boxShadow: activeTab === 'products' ? '0 2px 4px rgba(1, 46, 162, 0.2)' : 'none',
+            transition: 'all 0.15s ease'
           }}
         >
           <Package size={18} /> Products Catalogue ({products.length})
@@ -792,17 +806,21 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
         <button
           onClick={() => setActiveTab('orders')}
           style={{
-            padding: '10px 20px',
+            padding: '10px 18px',
             borderRadius: '8px',
             border: 'none',
-            backgroundColor: activeTab === 'orders' ? '#012ea2' : '#f8fafc',
+            backgroundColor: activeTab === 'orders' ? '#012ea2' : '#f1f5f9',
             color: activeTab === 'orders' ? '#ffffff' : '#475569',
             fontWeight: 700,
-            fontSize: '0.95rem',
+            fontSize: '0.9rem',
             cursor: 'pointer',
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: '8px',
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
+            boxShadow: activeTab === 'orders' ? '0 2px 4px rgba(1, 46, 162, 0.2)' : 'none',
+            transition: 'all 0.15s ease'
           }}
         >
           <ShoppingBag size={18} /> Customer Orders ({orders.length})
@@ -811,17 +829,21 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
         <button
           onClick={() => setActiveTab('inquiries')}
           style={{
-            padding: '10px 20px',
+            padding: '10px 18px',
             borderRadius: '8px',
             border: 'none',
-            backgroundColor: activeTab === 'inquiries' ? '#012ea2' : '#f8fafc',
+            backgroundColor: activeTab === 'inquiries' ? '#012ea2' : '#f1f5f9',
             color: activeTab === 'inquiries' ? '#ffffff' : '#475569',
             fontWeight: 700,
-            fontSize: '0.95rem',
+            fontSize: '0.9rem',
             cursor: 'pointer',
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: '8px',
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
+            boxShadow: activeTab === 'inquiries' ? '0 2px 4px rgba(1, 46, 162, 0.2)' : 'none',
+            transition: 'all 0.15s ease'
           }}
         >
           <MessageSquare size={18} /> Contact Inquiries ({inquiries.length})
@@ -844,7 +866,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
             border: '1px solid #e2e8f0',
             marginBottom: '20px'
           }}>
-            <div style={{ position: 'relative', minWidth: '280px', flex: '1 1 auto' }}>
+            <div style={{ position: 'relative', minWidth: '220px', flex: '1 1 auto' }}>
               <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
               <input
                 type="text"
@@ -861,7 +883,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
               />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <button
                 onClick={() => setIsPurgeModalOpen(true)}
                 style={{
@@ -1075,7 +1097,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
             marginBottom: '20px'
           }}>
             {/* Search Input */}
-            <div style={{ position: 'relative', minWidth: '260px', flex: '1 1 auto' }}>
+            <div style={{ position: 'relative', minWidth: '220px', flex: '1 1 auto' }}>
               <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
               <input
                 type="text"
@@ -1528,7 +1550,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
             marginBottom: '20px'
           }}>
             {/* Search Input */}
-            <div style={{ position: 'relative', minWidth: '260px', flex: '1 1 auto' }}>
+            <div style={{ position: 'relative', minWidth: '220px', flex: '1 1 auto' }}>
               <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
               <input
                 type="text"
