@@ -1,42 +1,84 @@
 import React, { useState } from 'react';
-import { X, User, ArrowRight, ShieldCheck, Lock } from 'lucide-react';
+import { X, User, ArrowRight, ShieldCheck, UserPlus, Lock } from 'lucide-react';
 import { Button } from './Button';
 import { useToast } from '../context/ToastContext';
-import { loginUser } from '../api/client';
+import { loginUser, registerUser } from '../api/client';
 
 interface AccountModalProps {
   isOpen: boolean;
   onClose: () => void;
   onNavigateToAdmin?: () => void;
+  initialMode?: 'login' | 'register';
 }
 
-export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, onNavigateToAdmin }) => {
+export const AccountModal: React.FC<AccountModalProps> = ({
+  isOpen,
+  onClose,
+  onNavigateToAdmin,
+  initialMode = 'login',
+}) => {
+  const [mode, setMode] = useState<'login' | 'register'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { showToast } = useToast();
 
+  React.useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode);
+      setErrorMessage(null);
+    }
+  }, [isOpen, initialMode]);
+
   if (!isOpen) return null;
 
-  const handleSubmitLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMessage(null);
 
+    if (mode === 'register') {
+      if (password.length < 6) {
+        setErrorMessage('Password must be at least 6 characters long.');
+        setIsLoading(false);
+        return;
+      }
+      if (password !== confirmPassword) {
+        setErrorMessage('Passwords do not match. Please re-enter.');
+        setIsLoading(false);
+        return;
+      }
+    }
+
     try {
-      const res = await loginUser(email, password);
+      const res =
+        mode === 'login'
+          ? await loginUser(email, password)
+          : await registerUser(email, password);
+
       if (typeof window !== 'undefined') {
         localStorage.setItem('evys_auth_token', res.token);
         localStorage.setItem('evys_auth_user', JSON.stringify(res.user));
       }
-      showToast('Signed In', `Welcome, ${res.user.email} (${res.user.role})`);
+
+      showToast(
+        mode === 'login' ? 'Signed In' : 'Account Created',
+        `Welcome, ${res.user.email}!`
+      );
       onClose();
+
       if (res.user.role === 'ADMIN' && onNavigateToAdmin) {
         onNavigateToAdmin();
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Invalid email or password. Please verify credentials.');
+      setErrorMessage(
+        err.message ||
+          (mode === 'login'
+            ? 'Invalid email or password. Please verify credentials.'
+            : 'Unable to create account. Please verify details.')
+      );
     } finally {
       setIsLoading(false);
     }
@@ -78,7 +120,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, onN
           <X size={20} />
         </button>
 
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
           <div
             style={{
               width: '48px',
@@ -92,14 +134,72 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, onN
               margin: '0 auto 12px auto',
             }}
           >
-            <User size={24} />
+            {mode === 'login' ? <User size={24} /> : <UserPlus size={24} />}
           </div>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--color-ink)' }}>
-            Sign In to Your Account
+            {mode === 'login' ? 'Sign In to Your Account' : 'Create Customer Account'}
           </h2>
           <p style={{ fontSize: '0.875rem', color: 'var(--color-muted)', marginTop: '4px' }}>
-            Access customer procurement records or the administrator portal.
+            {mode === 'login'
+              ? 'Access your orders, track shipments, or sign in as administrator.'
+              : 'Create an account to securely finalize orders and track deliveries.'}
           </p>
+        </div>
+
+        {/* Tab Switcher */}
+        <div
+          style={{
+            display: 'flex',
+            backgroundColor: 'var(--color-bg)',
+            borderRadius: 'var(--radius-md)',
+            padding: '4px',
+            marginBottom: '20px',
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => {
+              setMode('login');
+              setErrorMessage(null);
+            }}
+            style={{
+              flex: 1,
+              padding: '8px 12px',
+              border: 'none',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.875rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              backgroundColor: mode === 'login' ? 'var(--color-white)' : 'transparent',
+              color: mode === 'login' ? 'var(--color-primary)' : 'var(--color-muted)',
+              boxShadow: mode === 'login' ? 'var(--shadow-sm)' : 'none',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            Sign In
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode('register');
+              setErrorMessage(null);
+            }}
+            style={{
+              flex: 1,
+              padding: '8px 12px',
+              border: 'none',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.875rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              backgroundColor: mode === 'register' ? 'var(--color-white)' : 'transparent',
+              color: mode === 'register' ? 'var(--color-primary)' : 'var(--color-muted)',
+              boxShadow: mode === 'register' ? 'var(--shadow-sm)' : 'none',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            Create Account
+          </button>
         </div>
 
         {errorMessage && (
@@ -118,15 +218,15 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, onN
           </div>
         )}
 
-        <form onSubmit={handleSubmitLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
-              Email Address
+              Email Address *
             </label>
             <input
               type="email"
               required
-              placeholder="e.g. admin@evysmedics.co.uk"
+              placeholder="e.g. customer@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               style={{
@@ -135,13 +235,14 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, onN
                 borderRadius: 'var(--radius-md)',
                 border: '1px solid var(--color-border)',
                 fontSize: '0.9375rem',
+                boxSizing: 'border-box',
               }}
             />
           </div>
 
           <div>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
-              Password
+              Password * {mode === 'register' && <span style={{ fontWeight: 400, color: 'var(--color-muted)' }}>(min 6 characters)</span>}
             </label>
             <input
               type="password"
@@ -155,9 +256,33 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, onN
                 borderRadius: 'var(--radius-md)',
                 border: '1px solid var(--color-border)',
                 fontSize: '0.9375rem',
+                boxSizing: 'border-box',
               }}
             />
           </div>
+
+          {mode === 'register' && (
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
+                Confirm Password *
+              </label>
+              <input
+                type="password"
+                required
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--color-border)',
+                  fontSize: '0.9375rem',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+          )}
 
           <Button
             variant="primary"
@@ -167,23 +292,29 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, onN
             isLoading={isLoading}
             icon={<ArrowRight size={18} />}
           >
-            Sign In
+            {mode === 'login' ? 'Sign In' : 'Create Account & Sign In'}
           </Button>
 
-          <div style={{
-            marginTop: '8px',
-            padding: '10px 12px',
-            backgroundColor: '#F8FAFC',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--color-border)',
-            fontSize: '0.75rem',
-            color: 'var(--color-muted)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
+          <div
+            style={{
+              marginTop: '6px',
+              padding: '10px 12px',
+              backgroundColor: '#F8FAFC',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--color-border)',
+              fontSize: '0.75rem',
+              color: 'var(--color-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
             <ShieldCheck size={16} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
-            <span>Administrator access will automatically redirect to the <strong>Admin Management Console</strong>.</span>
+            <span>
+              {mode === 'login'
+                ? 'Administrator accounts will automatically open the Admin Console.'
+                : 'Your email address will be used for Paystack order confirmation receipts.'}
+            </span>
           </div>
         </form>
       </div>

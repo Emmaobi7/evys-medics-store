@@ -4,6 +4,7 @@ import { getClient, query } from '../db/connection';
 import { validate } from '../middleware/validate';
 import { AppError } from '../middleware/errorHandler';
 import { paystackService } from '../services/paystack';
+import { sendOrderPaymentConfirmationEmail } from '../services/emailService';
 import { toMinorUnits, isSupportedCurrency } from '../utils/money';
 
 export const paymentsRouter = Router();
@@ -254,6 +255,11 @@ paymentsRouter.get('/verify/:reference', async (req: Request, res: Response, nex
 
     await client.query('COMMIT');
 
+    // Asynchronously dispatch confirmation email to customer
+    sendOrderPaymentConfirmationEmail(order.id, payment.provider_reference).catch((e) => {
+      console.error('[Payment Notification Error]:', e.message);
+    });
+
     res.status(200).json({
       success: true,
       message: 'Payment verified successfully.',
@@ -343,6 +349,11 @@ paymentsRouter.post('/webhook', async (req: Request, res: Response, next: NextFu
                 `,
                 [order.id]
               );
+
+              // Asynchronously dispatch confirmation email to customer
+              sendOrderPaymentConfirmationEmail(order.id, reference).catch((e) => {
+                console.error('[Webhook Email Notification Error]:', e.message);
+              });
             }
           }
         }

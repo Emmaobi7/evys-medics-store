@@ -313,6 +313,13 @@ export async function loginUser(email: string, password: string): Promise<AuthRe
   });
 }
 
+export async function registerUser(email: string, password: string): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+}
+
 export async function fetchCurrentUser(token: string): Promise<{ user: AuthUser }> {
   return apiFetch<{ user: AuthUser }>('/auth/me', {
     headers: {

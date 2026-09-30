@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { query } from '../db/connection';
 import { validate } from '../middleware/validate';
 import { requireAuth } from '../middleware/auth';
-import { comparePassword, generateToken } from '../utils/auth';
+import { comparePassword, generateToken, hashPassword } from '../utils/auth';
 import { AppError } from '../middleware/errorHandler';
 
 export const authRouter = Router();
@@ -14,6 +14,70 @@ const loginSchema = z.object({
     password: z.string().min(1, 'Password is required'),
   }),
 });
+
+const registerSchema = z.object({
+  body: z.object({
+    email: z.string().email('Valid email address is required'),
+    password: z.string().min(6, 'Password must be at least 6 characters long'),
+  }),
+});
+
+/**
+ * POST /api/v1/auth/register
+ * Register a new customer user account and return signed JWT
+ */
+authRouter.post(
+  '/register',
+  validate(registerSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { email, password } = req.body;
+      const normalizedEmail = email.toLowerCase().trim();
+
+      // 1. Check if user already exists
+      const checkSql = `
+        SELECT id FROM users WHERE LOWER(email) = $1 LIMIT 1;
+      `;
+      const { rows } = await query(checkSql, [normalizedEmail]);
+      if (rows.length > 0) {
+        throw new AppError('An account with this email address already exists. Please sign in instead.', 409);
+      }
+
+      // 2. Hash password securely
+      const passwordHash = await hashPassword(password);
+      const userId = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+      // 3. Create customer user record
+      const insertSql = `
+        INSERT INTO users (id, email, password_hash, role, created_at, updated_at)
+        VALUES ($1, $2, $3, 'CUSTOMER', NOW(), NOW())
+        RETURNING id, email, role, created_at;
+      `;
+      const insertRes = await query(insertSql, [userId, normalizedEmail, passwordHash]);
+      const newUser = insertRes.rows[0];
+
+      // 4. Issue JWT token
+      const token = generateToken({
+        id: newUser.id,
+        email: newUser.email,
+        role: newUser.role,
+      });
+
+      res.status(201).json({
+        message: 'Registration successful',
+        token,
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          role: newUser.role,
+          createdAt: newUser.created_at,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 /**
  * POST /api/v1/auth/login

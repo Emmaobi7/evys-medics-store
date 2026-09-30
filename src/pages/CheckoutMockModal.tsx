@@ -1,7 +1,27 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, ShieldCheck, Lock, ArrowRight, CreditCard, PackageCheck, AlertCircle, ExternalLink, RefreshCw } from 'lucide-react';
+import {
+  X,
+  ShieldCheck,
+  Lock,
+  ArrowRight,
+  CreditCard,
+  PackageCheck,
+  AlertCircle,
+  ExternalLink,
+  RefreshCw,
+  User,
+  UserPlus,
+  CheckCircle2,
+} from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { submitOrderToApi, initializePaystackPayment, verifyPaystackPayment } from '../api/client';
+import {
+  submitOrderToApi,
+  initializePaystackPayment,
+  verifyPaystackPayment,
+  loginUser,
+  registerUser,
+  AuthUser,
+} from '../api/client';
 import { Button } from '../components/Button';
 import { formatNaira } from '../utils/money';
 
@@ -18,6 +38,16 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
 }) => {
   const { cart, subtotal, deliveryFee, total, clearCart } = useCart();
   const [step, setStep] = useState<'details' | 'paystack_processing' | 'confirmation'>('details');
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+
+  // Auth gate sub-state if user is not logged in
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authConfirmPassword, setAuthConfirmPassword] = useState('');
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
   const [orderId, setOrderId] = useState('');
   const [orderNumber, setOrderNumber] = useState('');
   const [paystackReference, setPaystackReference] = useState('');
@@ -26,15 +56,6 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [paystackAuthUrl, setPaystackAuthUrl] = useState<string | null>(null);
   const idempotencyKeyRef = useRef<string>('');
-
-  // Generate a unique idempotency key when opening the modal
-  useEffect(() => {
-    if (isOpen) {
-      idempotencyKeyRef.current = `idem_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      setErrorMessage(null);
-      setStep('details');
-    }
-  }, [isOpen]);
 
   const [shippingDetails, setShippingDetails] = useState({
     contactName: '',
@@ -45,11 +66,95 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
     postcode: '',
   });
 
+  // Check auth and initialize modal
+  useEffect(() => {
+    if (isOpen) {
+      idempotencyKeyRef.current = `idem_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      setErrorMessage(null);
+      setAuthError(null);
+      setStep('details');
+
+      try {
+        const storedUser = localStorage.getItem('evys_auth_user');
+        const storedToken = localStorage.getItem('evys_auth_token');
+        if (storedUser && storedToken) {
+          const parsed = JSON.parse(storedUser);
+          setCurrentUser(parsed);
+          setShippingDetails((prev) => ({
+            ...prev,
+            email: parsed.email || prev.email,
+          }));
+        } else {
+          setCurrentUser(null);
+        }
+      } catch {
+        setCurrentUser(null);
+      }
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
+
+  const handleAuthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsAuthLoading(true);
+    setAuthError(null);
+
+    if (authMode === 'register') {
+      if (authPassword.length < 6) {
+        setAuthError('Password must be at least 6 characters long.');
+        setIsAuthLoading(false);
+        return;
+      }
+      if (authPassword !== authConfirmPassword) {
+        setAuthError('Passwords do not match. Please verify.');
+        setIsAuthLoading(false);
+        return;
+      }
+    }
+
+    try {
+      const res =
+        authMode === 'login'
+          ? await loginUser(authEmail, authPassword)
+          : await registerUser(authEmail, authPassword);
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('evys_auth_token', res.token);
+        localStorage.setItem('evys_auth_user', JSON.stringify(res.user));
+      }
+
+      setCurrentUser(res.user);
+      setShippingDetails((prev) => ({
+        ...prev,
+        email: res.user.email,
+      }));
+    } catch (err: any) {
+      setAuthError(
+        err.message ||
+          (authMode === 'login'
+            ? 'Invalid email or password. Please verify credentials.'
+            : 'Unable to create account. Please check details.')
+      );
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const handleSignOutFromCheckout = () => {
+    localStorage.removeItem('evys_auth_token');
+    localStorage.removeItem('evys_auth_user');
+    setCurrentUser(null);
+  };
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
+
+    if (!currentUser) {
+      setErrorMessage('You must be signed in or create an account to proceed with payment.');
+      return;
+    }
 
     if (cart.length === 0) {
       setErrorMessage('Your basket is empty. Please add items before completing checkout.');
@@ -61,7 +166,7 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
 
     const orderPayload = {
       customerName: shippingDetails.contactName.trim(),
-      customerEmail: shippingDetails.email.trim(),
+      customerEmail: (shippingDetails.email || currentUser.email).trim(),
       customerPhone: shippingDetails.phone.trim(),
       paymentMethod: 'paystack' as const,
       shippingAddressLine1: shippingDetails.addressLine1.trim(),
@@ -102,9 +207,6 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
     }
   };
 
-  /**
-   * Re-initializes Paystack for the existing order without creating a duplicate order
-   */
   const handleRetryPaystackPayment = async () => {
     if (!orderId || isSubmitting) return;
 
@@ -128,9 +230,6 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
     }
   };
 
-  /**
-   * Verifies Paystack transaction with backend
-   */
   const handleVerifyPayment = async () => {
     if (!paystackReference || isVerifying) return;
 
@@ -194,169 +293,370 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
 
         {step === 'details' && (
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-primary)', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '6px' }}>
-              <Lock size={15} /> 256-BIT ENCRYPTED CHECKOUT
-            </div>
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '6px', color: 'var(--color-ink)' }}>
-              Delivery Information
-            </h2>
-            <p style={{ fontSize: '0.875rem', color: 'var(--color-muted)', marginBottom: '20px' }}>
-              Prices are tax-inclusive. Enter delivery details to proceed to secure Paystack settlement.
-            </p>
-
-            {errorMessage && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '12px',
-                  backgroundColor: 'var(--color-danger-bg, #FEF2F2)',
-                  color: 'var(--color-danger, #DC2626)',
-                  border: '1px solid #FECACA',
-                  padding: '12px 16px',
-                  borderRadius: 'var(--radius-md)',
-                  marginBottom: '20px',
-                  fontSize: '0.875rem',
-                }}
-              >
-                <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
-                <div>
-                  <strong>Notice:</strong> {errorMessage}
-                </div>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmitOrder} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-              {/* Recipient Full Name */}
+            {/* If NOT Authenticated: Show Auth Gating Section */}
+            {!currentUser ? (
               <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
-                  Recipient Full Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Eleanor Vance"
-                  value={shippingDetails.contactName}
-                  onChange={(e) => setShippingDetails({ ...shippingDetails, contactName: e.target.value })}
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
-                />
-              </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-primary)', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '6px' }}>
+                  <Lock size={15} /> ACCOUNT REQUIRED FOR PAYMENT
+                </div>
+                <h2 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '6px', color: 'var(--color-ink)' }}>
+                  Sign In or Create Account to Pay
+                </h2>
+                <p style={{ fontSize: '0.875rem', color: 'var(--color-muted)', marginBottom: '20px' }}>
+                  You need an account to complete your order. An email receipt will be sent upon payment settlement.
+                </p>
 
-              {/* Email & Phone */}
-              <div className="form-row-2col">
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="e.g. customer@example.com"
-                    value={shippingDetails.email}
-                    onChange={(e) => setShippingDetails({ ...shippingDetails, email: e.target.value })}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
-                    Telephone Number *
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="e.g. +234 801 234 5678"
-                    value={shippingDetails.phone}
-                    onChange={(e) => setShippingDetails({ ...shippingDetails, phone: e.target.value })}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
-                  />
-                </div>
-              </div>
-
-              {/* Delivery Address */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
-                  Delivery Address *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Street Address, Building, Suite / Floor"
-                  value={shippingDetails.addressLine1}
-                  onChange={(e) => setShippingDetails({ ...shippingDetails, addressLine1: e.target.value })}
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', marginBottom: '12px', boxSizing: 'border-box' }}
-                />
-                <div className="form-row-2col">
-                  <input
-                    type="text"
-                    required
-                    placeholder="City / State *"
-                    value={shippingDetails.city}
-                    onChange={(e) => setShippingDetails({ ...shippingDetails, city: e.target.value })}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
-                  />
-                  <input
-                    type="text"
-                    required
-                    placeholder="Postal Code / Area *"
-                    value={shippingDetails.postcode}
-                    onChange={(e) => setShippingDetails({ ...shippingDetails, postcode: e.target.value })}
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
-                  />
-                </div>
-              </div>
-
-              {/* Paystack Payment Notice */}
-              <div
-                style={{
-                  border: '1.5px solid var(--color-primary)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '14px 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  backgroundColor: 'var(--color-primary-light)',
-                }}
-              >
-                <CreditCard size={22} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-ink)' }}>
-                    Payment Method: Paystack (Cards, Bank Transfer, USSD)
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>
-                    Secure instant settlement in NGN (₦) via Paystack encrypted gateway
-                  </div>
-                </div>
-              </div>
-
-              {/* Order Summary breakdown */}
-              <div style={{ backgroundColor: 'var(--color-bg)', padding: '16px 20px', borderRadius: 'var(--radius-lg)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '6px' }}>
-                  <span>Items Subtotal</span>
-                  <span style={{ fontWeight: 600 }}>{formatNaira(subtotal)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '6px' }}>
-                  <span>Delivery Charge</span>
-                  <span style={{ fontWeight: 600 }}>
-                    {deliveryFee === 0 ? 'Confirmed at Dispatch' : formatNaira(deliveryFee)}
+                {/* Cart Snapshot banner */}
+                <div
+                  style={{
+                    backgroundColor: 'var(--color-bg)',
+                    padding: '12px 16px',
+                    borderRadius: 'var(--radius-md)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '20px',
+                    border: '1px solid var(--color-border)',
+                  }}
+                >
+                  <span style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>
+                    Order Total ({cart.reduce((s, i) => s + i.quantity, 0)} items):
+                  </span>
+                  <span style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--color-primary)' }}>
+                    {formatNaira(total)}
                   </span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.125rem', fontWeight: 800, borderTop: '1px dashed var(--color-border)', paddingTop: '8px', marginTop: '8px' }}>
-                  <span>Total (Tax-Inclusive)</span>
-                  <span style={{ color: 'var(--color-primary)' }}>{formatNaira(total)}</span>
-                </div>
-              </div>
 
-              <Button
-                variant="primary"
-                size="lg"
-                fullWidth
-                type="submit"
-                isLoading={isSubmitting}
-                icon={<ArrowRight size={18} />}
-              >
-                Pay Now with Paystack ({formatNaira(total)})
-              </Button>
-            </form>
+                {/* Tab Switcher */}
+                <div
+                  style={{
+                    display: 'flex',
+                    backgroundColor: 'var(--color-bg)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '4px',
+                    marginBottom: '18px',
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode('login');
+                      setAuthError(null);
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      border: 'none',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '0.875rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      backgroundColor: authMode === 'login' ? 'var(--color-white)' : 'transparent',
+                      color: authMode === 'login' ? 'var(--color-primary)' : 'var(--color-muted)',
+                      boxShadow: authMode === 'login' ? 'var(--shadow-sm)' : 'none',
+                    }}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode('register');
+                      setAuthError(null);
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      border: 'none',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '0.875rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      backgroundColor: authMode === 'register' ? 'var(--color-white)' : 'transparent',
+                      color: authMode === 'register' ? 'var(--color-primary)' : 'var(--color-muted)',
+                      boxShadow: authMode === 'register' ? 'var(--shadow-sm)' : 'none',
+                    }}
+                  >
+                    Create Account
+                  </button>
+                </div>
+
+                {authError && (
+                  <div
+                    style={{
+                      padding: '10px 14px',
+                      backgroundColor: 'var(--color-danger-bg, #FEF2F2)',
+                      color: 'var(--color-danger, #DC2626)',
+                      border: '1px solid #FECACA',
+                      borderRadius: 'var(--radius-md)',
+                      fontSize: '0.8125rem',
+                      marginBottom: '16px',
+                    }}
+                  >
+                    {authError}
+                  </div>
+                )}
+
+                <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. customer@example.com"
+                      value={authEmail}
+                      onChange={(e) => setAuthEmail(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--color-border)',
+                        fontSize: '0.9375rem',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
+                      Password * {authMode === 'register' && <span style={{ fontWeight: 400, color: 'var(--color-muted)' }}>(min 6 characters)</span>}
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="••••••••"
+                      value={authPassword}
+                      onChange={(e) => setAuthPassword(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--color-border)',
+                        fontSize: '0.9375rem',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+
+                  {authMode === 'register' && (
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
+                        Confirm Password *
+                      </label>
+                      <input
+                        type="password"
+                        required
+                        placeholder="••••••••"
+                        value={authConfirmPassword}
+                        onChange={(e) => setAuthConfirmPassword(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px',
+                          borderRadius: 'var(--radius-md)',
+                          border: '1px solid var(--color-border)',
+                          fontSize: '0.9375rem',
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    type="submit"
+                    isLoading={isAuthLoading}
+                    icon={<ArrowRight size={18} />}
+                  >
+                    {authMode === 'login' ? 'Sign In & Continue to Payment' : 'Create Account & Continue'}
+                  </Button>
+                </form>
+              </div>
+            ) : (
+              /* If Authenticated: Show Delivery Form & Paystack Checkout */
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-primary)', fontSize: '0.8125rem', fontWeight: 700 }}>
+                    <Lock size={15} /> 256-BIT ENCRYPTED CHECKOUT
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--color-muted)' }}>
+                    <CheckCircle2 size={14} style={{ color: 'var(--color-success)' }} />
+                    <span>Logged in as <strong>{currentUser.email}</strong></span>
+                    <button
+                      type="button"
+                      onClick={handleSignOutFromCheckout}
+                      style={{ background: 'none', border: 'none', color: 'var(--color-primary)', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.75rem', padding: 0 }}
+                    >
+                      (Switch)
+                    </button>
+                  </div>
+                </div>
+
+                <h2 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '6px', color: 'var(--color-ink)' }}>
+                  Delivery Information
+                </h2>
+                <p style={{ fontSize: '0.875rem', color: 'var(--color-muted)', marginBottom: '20px' }}>
+                  Prices are tax-inclusive. Enter delivery details to proceed to secure Paystack settlement.
+                </p>
+
+                {errorMessage && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '12px',
+                      backgroundColor: 'var(--color-danger-bg, #FEF2F2)',
+                      color: 'var(--color-danger, #DC2626)',
+                      border: '1px solid #FECACA',
+                      padding: '12px 16px',
+                      borderRadius: 'var(--radius-md)',
+                      marginBottom: '20px',
+                      fontSize: '0.875rem',
+                    }}
+                  >
+                    <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+                    <div>
+                      <strong>Notice:</strong> {errorMessage}
+                    </div>
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmitOrder} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                  {/* Recipient Full Name */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
+                      Recipient Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Eleanor Vance"
+                      value={shippingDetails.contactName}
+                      onChange={(e) => setShippingDetails({ ...shippingDetails, contactName: e.target.value })}
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
+                    />
+                  </div>
+
+                  {/* Email & Phone */}
+                  <div className="form-row-2col">
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
+                        Email Address (Receipt) *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="e.g. customer@example.com"
+                        value={shippingDetails.email || currentUser.email}
+                        onChange={(e) => setShippingDetails({ ...shippingDetails, email: e.target.value })}
+                        style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
+                        Telephone Number *
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="e.g. +234 801 234 5678"
+                        value={shippingDetails.phone}
+                        onChange={(e) => setShippingDetails({ ...shippingDetails, phone: e.target.value })}
+                        style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Delivery Address */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px', color: 'var(--color-ink)' }}>
+                      Delivery Address *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Street Address, Building, Suite / Floor"
+                      value={shippingDetails.addressLine1}
+                      onChange={(e) => setShippingDetails({ ...shippingDetails, addressLine1: e.target.value })}
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', marginBottom: '12px', boxSizing: 'border-box' }}
+                    />
+                    <div className="form-row-2col">
+                      <input
+                        type="text"
+                        required
+                        placeholder="City / State *"
+                        value={shippingDetails.city}
+                        onChange={(e) => setShippingDetails({ ...shippingDetails, city: e.target.value })}
+                        style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
+                      />
+                      <input
+                        type="text"
+                        required
+                        placeholder="Postal Code / Area *"
+                        value={shippingDetails.postcode}
+                        onChange={(e) => setShippingDetails({ ...shippingDetails, postcode: e.target.value })}
+                        style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Paystack Payment Notice */}
+                  <div
+                    style={{
+                      border: '1.5px solid var(--color-primary)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: '14px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      backgroundColor: 'var(--color-primary-light)',
+                    }}
+                  >
+                    <CreditCard size={22} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-ink)' }}>
+                        Payment Method: Paystack (Cards, Bank Transfer, USSD)
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>
+                        Secure instant settlement in NGN (₦) via Paystack encrypted gateway
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Order Summary breakdown */}
+                  <div style={{ backgroundColor: 'var(--color-bg)', padding: '16px 20px', borderRadius: 'var(--radius-lg)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '6px' }}>
+                      <span>Items Subtotal</span>
+                      <span style={{ fontWeight: 600 }}>{formatNaira(subtotal)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '6px' }}>
+                      <span>Delivery Charge</span>
+                      <span style={{ fontWeight: 600 }}>
+                        {deliveryFee === 0 ? 'Confirmed at Dispatch' : formatNaira(deliveryFee)}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.125rem', fontWeight: 800, borderTop: '1px dashed var(--color-border)', paddingTop: '8px', marginTop: '8px' }}>
+                      <span>Total (Tax-Inclusive)</span>
+                      <span style={{ color: 'var(--color-primary)' }}>{formatNaira(total)}</span>
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    type="submit"
+                    isLoading={isSubmitting}
+                    icon={<ArrowRight size={18} />}
+                  >
+                    Pay Now with Paystack ({formatNaira(total)})
+                  </Button>
+                </form>
+              </div>
+            )}
           </div>
         )}
 
@@ -504,13 +804,13 @@ export const CheckoutMockModal: React.FC<CheckoutModalProps> = ({
             </div>
 
             <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--color-success)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
-              Order Confirmed &amp; Verified
+              Order Confirmed &amp; Payment Verified
             </div>
             <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '8px', color: 'var(--color-ink)' }}>
               Thank You For Your Order
             </h2>
             <p style={{ color: 'var(--color-muted)', marginBottom: '20px' }}>
-              Your order has been recorded and queued for warehouse picking and dispatch.
+              A confirmation email has been dispatched to <strong>{shippingDetails.email || currentUser?.email}</strong>.
             </p>
 
             <div

@@ -95,3 +95,8 @@ export function formatMoney(amount: number, currency: SupportedCurrency = DEFAUL
   });
   return `${conf.symbol}${formattedNumber}`;
 }
+
+export function formatNaira(amount: number): string {
+  return formatMoney(amount, 'NGN');
+}
+
