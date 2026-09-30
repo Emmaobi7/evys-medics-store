@@ -374,9 +374,14 @@ button, input, select, textarea {
 
 .header-search-icon {
   position: absolute;
-  left: 10px;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--color-muted);
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Mobile Nav Toggle */
@@ -610,8 +615,13 @@ button, input, select, textarea {
 .hero-search-box .header-search-icon {
   position: absolute;
   left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--color-primary);
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .hero-pill-badge {

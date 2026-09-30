@@ -19,7 +19,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onSelectProduct,
   onViewAllResults,
   onSelectCategory,
-  placeholder = 'Search products, SKU...',
+  placeholder = 'Search product...',
   variant = 'header',
   className = '',
 }) => {

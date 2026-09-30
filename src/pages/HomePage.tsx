@@ -59,7 +59,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               <div className="hero-search-container">
                 <SearchBar
                   variant="hero"
-                  placeholder="Search Medical & Laboratory Supplies, SKU..."
+                  placeholder="Search product..."
                   onSelectProduct={onSelectProduct}
                   onViewAllResults={(query) => onNavigate('shop', { search: query })}
                   onSelectCategory={(catId) => onNavigate('shop', { category: catId })}
