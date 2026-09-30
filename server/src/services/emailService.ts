@@ -81,7 +81,7 @@ export async function sendOrderPaymentConfirmationEmail(
     const totalFormatted = formatNaira(parseFloat(order.grand_total_inc_vat));
     const subtotalFormatted = formatNaira(parseFloat(order.subtotal_ex_vat));
     const deliveryFormatted = parseFloat(order.delivery_fee) > 0 ? formatNaira(parseFloat(order.delivery_fee)) : '₦0.00 (Standard)';
-    const fromAddress = process.env.EMAIL_FROM || 'Evy\'s Medics Store <orders@evysmedics.co.uk>';
+    const fromAddress = process.env.EMAIL_FROM || (process.env.SMTP_USER && process.env.SMTP_USER.includes('@') ? `Evy's Medics Store <${process.env.SMTP_USER}>` : 'Evy\'s Medics Store <admin@evysmedics.co.uk>');
 
     // Build items HTML table
     const itemsHtml = items
