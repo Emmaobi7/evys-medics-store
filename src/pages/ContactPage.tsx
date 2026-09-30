@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Phone, Mail, MapPin, Clock, Building2, Send, ChevronRight } from 'lucide-react';
+import { Phone, Mail, MapPin, Clock, Building2, Send, ChevronRight, AlertCircle } from 'lucide-react';
 import { Button } from '../components/Button';
 import { useToast } from '../context/ToastContext';
+import { submitContactInquiry } from '../api/client';
 
 interface ContactPageProps {
   initialReason?: string;
@@ -21,15 +22,33 @@ export const ContactPage: React.FC<ContactPageProps> = ({
     enquiryType: initialReason === 'bulk' ? 'bulk-order' : 'general',
     message: '',
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitted(true);
-    showToast(
-      'Message Received',
-      'Our clinical procurement team will respond within 2 business hours.'
-    );
+    setErrorMessage(null);
+
+    if (!formData.fullName.trim() || !formData.email.trim() || !formData.message.trim()) {
+      setErrorMessage('Please fill in all required fields.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await submitContactInquiry(formData);
+      setIsSubmitted(true);
+      showToast(
+        'Message Received',
+        'Our clinical procurement team has logged your inquiry and will respond promptly.'
+      );
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to submit inquiry. Please try again.');
+      showToast('Submission Error', err.message || 'Failed to send message');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -106,6 +125,25 @@ export const ContactPage: React.FC<ContactPageProps> = ({
             </div>
           ) : (
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {errorMessage && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    backgroundColor: '#FEF2F2',
+                    color: '#DC2626',
+                    border: '1px solid #FECACA',
+                    padding: '12px 14px',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                  <div>{errorMessage}</div>
+                </div>
+              )}
+
               <div className="form-row-2col">
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '6px' }}>
@@ -208,7 +246,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({
                 />
               </div>
 
-              <Button variant="primary" size="lg" type="submit" icon={<Send size={18} />}>
+              <Button variant="primary" size="lg" type="submit" isLoading={isSubmitting} icon={<Send size={18} />}>
                 Send Message to Specialist
               </Button>
             </form>

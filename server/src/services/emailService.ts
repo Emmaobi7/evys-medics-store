@@ -373,7 +373,7 @@ This link will expire in 1 hour. If you did not request this, please ignore this
       console.log(`========================================================\n`);
 
       return {
-        success: true,
+        success: false,
         recipient: recipientEmail,
         mode: 'console_logged',
       };
@@ -387,4 +387,142 @@ This link will expire in 1 hour. If you did not request this, please ignore this
     };
   }
 }
+
+export interface SendInquiryReplyResult {
+  success: boolean;
+  messageId?: string;
+  recipient: string;
+  mode: 'smtp' | 'console_logged';
+}
+
+/**
+ * Sends a clinical enquiry response email directly to the customer's mailbox
+ */
+export async function sendInquiryReplyEmail(
+  recipientEmail: string,
+  customerName: string,
+  subject: string,
+  replyMessage: string,
+  originalMessage?: string
+): Promise<SendInquiryReplyResult> {
+  try {
+    const fromAddress =
+      process.env.EMAIL_FROM ||
+      (process.env.SMTP_USER && process.env.SMTP_USER.includes('@')
+        ? `Evy's Medics Store <${process.env.SMTP_USER}>`
+        : 'Evy\'s Medics Store <admin@evysmedics.co.uk>');
+
+    const emailSubject = subject || `Response to Your Inquiry — Evy's Medics Store`;
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>${emailSubject}</title>
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #F8FAFC; margin: 0; padding: 24px; color: #0F172A;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; background: #FFFFFF; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="background-color: #0D9488; padding: 28px 32px; text-align: center; color: #FFFFFF;">
+              <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">EVY'S MEDICS STORE</h1>
+              <p style="margin: 6px 0 0 0; font-size: 14px; opacity: 0.9;">Clinical & Procurement Support</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding: 32px;">
+              <h2 style="margin: 0 0 16px 0; font-size: 18px; color: #0F172A;">Hello ${customerName || 'Valued Customer'},</h2>
+              
+              <div style="font-size: 15px; line-height: 1.7; color: #334155; margin-bottom: 24px; white-space: pre-wrap;">
+${replyMessage}
+              </div>
+
+              ${
+                originalMessage
+                  ? `
+              <div style="background-color: #F1F5F9; border-left: 4px solid #0D9488; padding: 14px 16px; margin-top: 24px; border-radius: 0 8px 8px 0;">
+                <div style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; margin-bottom: 6px;">Your Original Inquiry</div>
+                <div style="font-size: 13px; color: #475569; font-style: italic; line-height: 1.5; white-space: pre-wrap;">${originalMessage}</div>
+              </div>
+              `
+                  : ''
+              }
+
+              <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid #E2E8F0; font-size: 13px; color: #64748B; line-height: 1.5;">
+                <strong>Evy's Medics Specialist Support Team</strong><br>
+                For direct orders and emergency supplies: <a href="mailto:admin@evysmedics.co.uk" style="color: #0D9488; text-decoration: none;">admin@evysmedics.co.uk</a>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #0F172A; color: #94A3B8; padding: 20px 32px; text-align: center; font-size: 12px;">
+              &copy; ${new Date().getFullYear()} Evy's Medics Store. Professional Healthcare & Medical Supplies.
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const textContent = `
+EVY'S MEDICS STORE — SPECIALIST RESPONSE
+========================================
+Hello ${customerName || 'Valued Customer'},
+
+${replyMessage}
+
+----------------------------------------
+${originalMessage ? `Your Original Inquiry:\n${originalMessage}\n` : ''}
+Best regards,
+Evy's Medics Support Team
+admin@evysmedics.co.uk
+    `.trim();
+
+    const transporter = getEmailTransporter();
+
+    if (transporter) {
+      const info = await transporter.sendMail({
+        from: fromAddress,
+        to: recipientEmail,
+        subject: emailSubject,
+        text: textContent,
+        html: htmlContent,
+      });
+
+      console.log(`[Email Service] Sent inquiry reply email via SMTP to ${recipientEmail} (Message ID: ${info.messageId})`);
+      return {
+        success: true,
+        messageId: info.messageId,
+        recipient: recipientEmail,
+        mode: 'smtp',
+      };
+    } else {
+      console.log(`\n========================================================`);
+      console.log(`📧 [EMAIL DISPATCH SIMULATION] Inquiry Reply`);
+      console.log(`To: ${recipientEmail}`);
+      console.log(`Subject: ${emailSubject}`);
+      console.log(`Message: ${replyMessage}`);
+      console.log(`========================================================\n`);
+
+      return {
+        success: true,
+        recipient: recipientEmail,
+        mode: 'console_logged',
+      };
+    }
+  } catch (error: any) {
+    console.error(`[Email Service Error] Failed to send inquiry reply email to ${recipientEmail}:`, error.message);
+    return {
+      success: false,
+      recipient: recipientEmail,
+      mode: 'console_logged',
+    };
+  }
+}
+
 

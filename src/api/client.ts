@@ -504,4 +504,103 @@ export async function updateAdminOrderStatus(token: string, orderId: string, sta
   });
 }
 
+// ----------------------------------------------------
+// Contact Inquiries API Services
+// ----------------------------------------------------
+
+export interface SubmitContactInquiryPayload {
+  fullName: string;
+  email: string;
+  phone?: string;
+  organisation?: string;
+  enquiryType?: string;
+  message: string;
+}
+
+export async function submitContactInquiry(payload: SubmitContactInquiryPayload): Promise<{ message: string; inquiry: any }> {
+  return apiFetch<{ message: string; inquiry: any }>('/contact', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export interface AdminInquiry {
+  id: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  organisation?: string;
+  enquiryType: string;
+  message: string;
+  status: 'pending' | 'replied_email' | 'resolved_phone' | 'closed';
+  adminReply?: string;
+  repliedAt?: string;
+  resolvedNotes?: string;
+  resolvedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function fetchAdminInquiries(
+  token: string,
+  params?: { status?: string; search?: string }
+): Promise<{ inquiries: AdminInquiry[] }> {
+  const queryParams = new URLSearchParams();
+  if (params?.status && params.status !== 'all') {
+    queryParams.set('status', params.status);
+  }
+  if (params?.search && params.search.trim()) {
+    queryParams.set('search', params.search.trim());
+  }
+
+  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+  return apiFetch<{ inquiries: AdminInquiry[] }>(`/admin/inquiries${queryString}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function replyInquiryByEmail(
+  token: string,
+  inquiryId: string,
+  data: { subject?: string; replyMessage: string }
+): Promise<{ message: string; inquiry: any }> {
+  return apiFetch<{ message: string; inquiry: any }>(`/admin/inquiries/${inquiryId}/reply-email`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function resolveInquiryByPhone(
+  token: string,
+  inquiryId: string,
+  notes: string
+): Promise<{ message: string; inquiry: any }> {
+  return apiFetch<{ message: string; inquiry: any }>(`/admin/inquiries/${inquiryId}/resolve-phone`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ notes }),
+  });
+}
+
+export async function updateInquiryStatus(
+  token: string,
+  inquiryId: string,
+  status: 'pending' | 'replied_email' | 'resolved_phone' | 'closed'
+): Promise<{ message: string; inquiry: any }> {
+  return apiFetch<{ message: string; inquiry: any }>(`/admin/inquiries/${inquiryId}/status`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ status }),
+  });
+}
+
+export async function deleteInquiry(token: string, inquiryId: string): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(`/admin/inquiries/${inquiryId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+
 

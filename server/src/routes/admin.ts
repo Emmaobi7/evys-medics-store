@@ -5,6 +5,7 @@ import { validate } from '../middleware/validate';
 import { requireAuth, requireAdmin } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import { cancelOrderAndRestoreStock } from '../services/orderService';
+import { sendInquiryReplyEmail } from '../services/emailService';
 
 export const adminRouter = Router();
 
@@ -587,3 +588,233 @@ adminRouter.patch(
     }
   }
 );
+
+
+// ==================== ADMIN CONTACT INQUIRIES ====================
+
+/**
+ * GET /api/v1/admin/inquiries
+ * List customer inquiries with status and search filters
+ */
+adminRouter.get('/inquiries', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const status = req.query.status as string | undefined;
+    const search = req.query.search as string | undefined;
+
+    const conditions: string[] = [];
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    if (status && status !== 'all') {
+      conditions.push(`status = $${paramIndex++}`);
+      params.push(status);
+    }
+
+    if (search && search.trim()) {
+      conditions.push(
+        `(full_name ILIKE $${paramIndex} OR email ILIKE $${paramIndex} OR phone ILIKE $${paramIndex} OR organisation ILIKE $${paramIndex} OR message ILIKE $${paramIndex})`
+      );
+      params.push(`%${search.trim()}%`);
+      paramIndex++;
+    }
+
+    const whereSql = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const sql = `
+      SELECT *
+      FROM contact_inquiries
+      ${whereSql}
+      ORDER BY created_at DESC;
+    `;
+
+    const { rows } = await query(sql, params);
+
+    res.json({
+      inquiries: rows.map((r) => ({
+        id: r.id,
+        fullName: r.full_name,
+        email: r.email,
+        phone: r.phone,
+        organisation: r.organisation,
+        enquiryType: r.enquiry_type,
+        message: r.message,
+        status: r.status,
+        adminReply: r.admin_reply,
+        repliedAt: r.replied_at,
+        resolvedNotes: r.resolved_notes,
+        resolvedAt: r.resolved_at,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+      })),
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/v1/admin/inquiries/:id/reply-email
+ * Send an email reply directly to the customer and update inquiry status
+ */
+const replyInquirySchema = z.object({
+  body: z.object({
+    subject: z.string().optional(),
+    replyMessage: z.string().min(5, 'Reply message is required (min 5 chars)'),
+  }),
+});
+
+adminRouter.post(
+  '/inquiries/:id/reply-email',
+  validate(replyInquirySchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const { subject, replyMessage } = req.body;
+
+      // 1. Fetch inquiry
+      const inqRes = await query('SELECT * FROM contact_inquiries WHERE id = $1 LIMIT 1;', [id]);
+      if (inqRes.rows.length === 0) {
+        throw new AppError('Inquiry not found', 404);
+      }
+      const inquiry = inqRes.rows[0];
+
+      // 2. Dispatch email via Brevo SMTP
+      const emailResult = await sendInquiryReplyEmail(
+        inquiry.email,
+        inquiry.full_name,
+        subject || `Response to your inquiry — Evy's Medics Store`,
+        replyMessage,
+        inquiry.message
+      );
+
+      // 3. Update database record
+      const updateSql = `
+        UPDATE contact_inquiries
+        SET status = 'replied_email',
+            admin_reply = $1,
+            replied_at = NOW(),
+            updated_at = NOW()
+        WHERE id = $2
+        RETURNING *;
+      `;
+      const updateRes = await query(updateSql, [replyMessage, id]);
+
+      res.json({
+        message: 'Reply sent successfully via email',
+        emailDelivery: emailResult,
+        inquiry: {
+          id: updateRes.rows[0].id,
+          status: updateRes.rows[0].status,
+          adminReply: updateRes.rows[0].admin_reply,
+          repliedAt: updateRes.rows[0].replied_at,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * PATCH /api/v1/admin/inquiries/:id/resolve-phone
+ * Mark inquiry resolved via direct telephone reachout
+ */
+const resolvePhoneSchema = z.object({
+  body: z.object({
+    notes: z.string().min(3, 'Resolution notes are required'),
+  }),
+});
+
+adminRouter.patch(
+  '/inquiries/:id/resolve-phone',
+  validate(resolvePhoneSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const { notes } = req.body;
+
+      const updateSql = `
+        UPDATE contact_inquiries
+        SET status = 'resolved_phone',
+            resolved_notes = $1,
+            resolved_at = NOW(),
+            updated_at = NOW()
+        WHERE id = $2
+        RETURNING *;
+      `;
+      const updateRes = await query(updateSql, [notes, id]);
+      if (updateRes.rows.length === 0) {
+        throw new AppError('Inquiry not found', 404);
+      }
+
+      res.json({
+        message: 'Inquiry resolved via phone call',
+        inquiry: updateRes.rows[0],
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * PATCH /api/v1/admin/inquiries/:id/status
+ * Update inquiry status (e.g., closed, pending)
+ */
+const updateInquiryStatusSchema = z.object({
+  body: z.object({
+    status: z.enum(['pending', 'replied_email', 'resolved_phone', 'closed']),
+  }),
+});
+
+adminRouter.patch(
+  '/inquiries/:id/status',
+  validate(updateInquiryStatusSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      const updateSql = `
+        UPDATE contact_inquiries
+        SET status = $1,
+            updated_at = NOW()
+        WHERE id = $2
+        RETURNING *;
+      `;
+      const updateRes = await query(updateSql, [status, id]);
+      if (updateRes.rows.length === 0) {
+        throw new AppError('Inquiry not found', 404);
+      }
+
+      res.json({
+        message: `Inquiry status changed to ${status}`,
+        inquiry: updateRes.rows[0],
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * DELETE /api/v1/admin/inquiries/:id
+ * Delete inquiry
+ */
+adminRouter.delete('/inquiries/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const deleteSql = `DELETE FROM contact_inquiries WHERE id = $1 RETURNING id;`;
+    const result = await query(deleteSql, [id]);
+    if (result.rows.length === 0) {
+      throw new AppError('Inquiry not found', 404);
+    }
+
+    res.json({
+      message: 'Inquiry deleted successfully',
+      id,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+

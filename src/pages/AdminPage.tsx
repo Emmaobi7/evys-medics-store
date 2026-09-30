@@ -16,7 +16,15 @@ import {
   X,
   Eye,
   LogOut,
-  ArrowLeft
+  ArrowLeft,
+  MessageSquare,
+  PhoneCall,
+  Mail,
+  Send,
+  Clock,
+  CheckCircle,
+  Building,
+  User
 } from 'lucide-react';
 import { 
   fetchAdminProducts, 
@@ -28,8 +36,14 @@ import {
   fetchAdminOrders, 
   updateAdminOrderDelivery, 
   updateAdminOrderStatus, 
+  fetchAdminInquiries,
+  replyInquiryByEmail,
+  resolveInquiryByPhone,
+  updateInquiryStatus,
+  deleteInquiry,
   AdminProduct, 
   AdminOrder,
+  AdminInquiry,
   CreateProductPayload,
   loginUser,
   fetchCurrentUser,
@@ -48,7 +62,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
   const { showToast } = useToast();
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('evys_auth_token'));
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'products' | 'orders'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'inquiries'>('products');
   
   // Login state (if not authenticated)
   const [loginEmail, setLoginEmail] = useState('admin@evysmedics.co.uk');
@@ -101,6 +115,24 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
   const [editingDeliveryId, setEditingDeliveryId] = useState<string | null>(null);
   const [deliveryFeeInput, setDeliveryFeeInput] = useState<number>(0);
 
+  // Inquiries state
+  const [inquiries, setInquiries] = useState<AdminInquiry[]>([]);
+  const [isLoadingInquiries, setIsLoadingInquiries] = useState(false);
+  const [inquiryFilterStatus, setInquiryFilterStatus] = useState<string>('all');
+  const [inquirySearch, setInquirySearch] = useState<string>('');
+  
+  // Inquiry Modals
+  const [replyModalInquiry, setReplyModalInquiry] = useState<AdminInquiry | null>(null);
+  const [emailSubjectInput, setEmailSubjectInput] = useState<string>('');
+  const [emailReplyMessageInput, setEmailReplyMessageInput] = useState<string>('');
+  const [isSendingReply, setIsSendingReply] = useState(false);
+
+  const [phoneModalInquiry, setPhoneModalInquiry] = useState<AdminInquiry | null>(null);
+  const [phoneNotesInput, setPhoneNotesInput] = useState<string>('');
+  const [isResolvingPhone, setIsResolvingPhone] = useState(false);
+
+  const [viewDetailInquiry, setViewDetailInquiry] = useState<AdminInquiry | null>(null);
+
   // Verify auth token on mount
   useEffect(() => {
     if (token) {
@@ -121,7 +153,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
     }
   }, [token]);
 
-  // Load products and categories when authenticated
+  // Load categories when authenticated
   useEffect(() => {
     if (token && currentUser) {
       fetchCategories()
@@ -137,9 +169,20 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
         loadProducts();
       } else if (activeTab === 'orders') {
         loadOrders();
+      } else if (activeTab === 'inquiries') {
+        loadInquiries();
       }
     }
-  }, [token, currentUser, activeTab, orderFilterStatus, orderPaymentStatus, orderSearch]);
+  }, [
+    token,
+    currentUser,
+    activeTab,
+    orderFilterStatus,
+    orderPaymentStatus,
+    orderSearch,
+    inquiryFilterStatus,
+    inquirySearch
+  ]);
 
   const loadProducts = async () => {
     if (!token) return;
@@ -168,6 +211,83 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
       showToast('Error Loading Orders', err.message);
     } finally {
       setIsLoadingOrders(false);
+    }
+  };
+
+  const loadInquiries = async () => {
+    if (!token) return;
+    setIsLoadingInquiries(true);
+    try {
+      const res = await fetchAdminInquiries(token, {
+        status: inquiryFilterStatus,
+        search: inquirySearch,
+      });
+      setInquiries(res.inquiries);
+    } catch (err: any) {
+      showToast('Error Loading Inquiries', err.message);
+    } finally {
+      setIsLoadingInquiries(false);
+    }
+  };
+
+  const handleSendEmailReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !replyModalInquiry || !emailReplyMessageInput.trim()) return;
+    setIsSendingReply(true);
+    try {
+      await replyInquiryByEmail(token, replyModalInquiry.id, {
+        subject: emailSubjectInput.trim() || undefined,
+        replyMessage: emailReplyMessageInput.trim(),
+      });
+      showToast('Email Reply Dispatched', `Response sent to ${replyModalInquiry.email}`);
+      setReplyModalInquiry(null);
+      setEmailReplyMessageInput('');
+      setEmailSubjectInput('');
+      loadInquiries();
+    } catch (err: any) {
+      showToast('Failed to Send Reply', err.message);
+    } finally {
+      setIsSendingReply(false);
+    }
+  };
+
+  const handleResolveViaPhone = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !phoneModalInquiry || !phoneNotesInput.trim()) return;
+    setIsResolvingPhone(true);
+    try {
+      await resolveInquiryByPhone(token, phoneModalInquiry.id, phoneNotesInput.trim());
+      showToast('Inquiry Resolved', 'Marked as resolved via telephone reachout.');
+      setPhoneModalInquiry(null);
+      setPhoneNotesInput('');
+      loadInquiries();
+    } catch (err: any) {
+      showToast('Update Failed', err.message);
+    } finally {
+      setIsResolvingPhone(false);
+    }
+  };
+
+  const handleUpdateInquiryStatus = async (inquiryId: string, status: any) => {
+    if (!token) return;
+    try {
+      await updateInquiryStatus(token, inquiryId, status);
+      showToast('Status Updated', `Inquiry status changed to ${status}`);
+      loadInquiries();
+    } catch (err: any) {
+      showToast('Update Failed', err.message);
+    }
+  };
+
+  const handleDeleteInquiry = async (inquiryId: string, name: string) => {
+    if (!token) return;
+    if (!window.confirm(`Permanently remove inquiry from "${name}"?`)) return;
+    try {
+      await deleteInquiry(token, inquiryId);
+      showToast('Inquiry Deleted', 'Inquiry was removed.');
+      setInquiries((prev) => prev.filter((i) => i.id !== inquiryId));
+    } catch (err: any) {
+      showToast('Delete Failed', err.message);
     }
   };
 
@@ -607,6 +727,25 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
           }}
         >
           <ShoppingBag size={18} /> Customer Orders ({orders.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab('inquiries')}
+          style={{
+            padding: '10px 20px',
+            borderRadius: '8px',
+            border: 'none',
+            backgroundColor: activeTab === 'inquiries' ? '#0d9488' : '#f8fafc',
+            color: activeTab === 'inquiries' ? '#ffffff' : '#475569',
+            fontWeight: 700,
+            fontSize: '0.95rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <MessageSquare size={18} /> Contact Inquiries ({inquiries.length})
         </button>
       </div>
 
@@ -1287,6 +1426,745 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
                 }}
               >
                 Close Details
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: CONTACT INQUIRIES */}
+      {activeTab === 'inquiries' && (
+        <div>
+          {/* Inquiry Filter & Search Toolbar */}
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '14px',
+            backgroundColor: '#ffffff',
+            padding: '16px 20px',
+            borderRadius: '10px',
+            border: '1px solid #e2e8f0',
+            marginBottom: '20px'
+          }}>
+            {/* Search Input */}
+            <div style={{ position: 'relative', minWidth: '260px', flex: '1 1 auto' }}>
+              <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <input
+                type="text"
+                placeholder="Search by Name, Email, Phone, Organisation, or Message..."
+                value={inquirySearch}
+                onChange={(e) => setInquirySearch(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '9px 12px 9px 38px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '0.875rem'
+                }}
+              />
+            </div>
+
+            {/* Filter Controls */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>Inquiry Status:</span>
+                <select
+                  value={inquiryFilterStatus}
+                  onChange={(e) => setInquiryFilterStatus(e.target.value)}
+                  style={{
+                    padding: '7px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.85rem',
+                    backgroundColor: '#ffffff'
+                  }}
+                >
+                  <option value="all">All Inquiries</option>
+                  <option value="pending">Pending / Unresolved</option>
+                  <option value="replied_email">Replied via Email</option>
+                  <option value="resolved_phone">Resolved via Phone</option>
+                  <option value="closed">Closed / Archived</option>
+                </select>
+              </div>
+
+              <button
+                onClick={loadInquiries}
+                style={{
+                  padding: '7px 14px',
+                  backgroundColor: '#f8fafc',
+                  color: '#475569',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <RefreshCw size={14} className={isLoadingInquiries ? 'animate-spin' : ''} /> Refresh
+              </button>
+            </div>
+          </div>
+
+          {/* Inquiries Table */}
+          {isLoadingInquiries ? (
+            <div style={{ padding: '60px', textAlign: 'center', color: '#64748b' }}>
+              <RefreshCw size={28} className="animate-spin" style={{ margin: '0 auto 12px auto' }} />
+              <p>Loading customer inquiries...</p>
+            </div>
+          ) : inquiries.length === 0 ? (
+            <div style={{
+              backgroundColor: '#ffffff',
+              padding: '60px 20px',
+              borderRadius: '10px',
+              border: '1px dashed #cbd5e1',
+              textAlign: 'center'
+            }}>
+              <MessageSquare size={48} style={{ color: '#94a3b8', margin: '0 auto 16px auto' }} />
+              <h3 style={{ fontSize: '1.2rem', color: '#1e293b', margin: '0 0 8px 0' }}>
+                No Inquiries Found
+              </h3>
+              <p style={{ color: '#64748b', margin: '0 0 16px 0', fontSize: '0.9rem' }}>
+                Customer submissions from the Contact & Procurement page will appear here.
+              </p>
+              {(inquiryFilterStatus !== 'all' || inquirySearch !== '') && (
+                <button
+                  onClick={() => {
+                    setInquiryFilterStatus('all');
+                    setInquirySearch('');
+                  }}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#0d9488',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Reset All Filters
+                </button>
+              )}
+            </div>
+          ) : (
+            <div style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '10px',
+              border: '1px solid #e2e8f0',
+              overflowX: 'auto'
+            }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 600 }}>
+                    <th style={{ padding: '12px 16px' }}>Date</th>
+                    <th style={{ padding: '12px 16px' }}>Customer / Organisation</th>
+                    <th style={{ padding: '12px 16px' }}>Subject</th>
+                    <th style={{ padding: '12px 16px' }}>Message Preview</th>
+                    <th style={{ padding: '12px 16px' }}>Status</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inquiries.map((inq) => (
+                    <tr key={inq.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '12px 16px', color: '#64748b', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                        {new Date(inq.createdAt).toLocaleDateString('en-GB', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <div style={{ fontWeight: 700, color: '#0f172a' }}>{inq.fullName}</div>
+                        <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                          <a href={`mailto:${inq.email}`} style={{ color: '#0d9488', textDecoration: 'none' }}>{inq.email}</a>
+                        </div>
+                        {inq.phone && (
+                          <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '2px' }}>
+                            <a href={`tel:${inq.phone}`} style={{ color: 'inherit', textDecoration: 'none' }}>📞 {inq.phone}</a>
+                          </div>
+                        )}
+                        {inq.organisation && (
+                          <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
+                            🏥 {inq.organisation}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px 16px', color: '#475569' }}>
+                        <span style={{
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          backgroundColor: '#f1f5f9',
+                          fontWeight: 600,
+                          fontSize: '0.75rem',
+                          textTransform: 'capitalize'
+                        }}>
+                          {inq.enquiryType.replace('-', ' ')}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 16px', color: '#334155', maxWidth: '280px' }}>
+                        <div style={{
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          lineHeight: 1.4
+                        }}>
+                          {inq.message}
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        {inq.status === 'pending' && (
+                          <span style={{
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            backgroundColor: '#fef3c7',
+                            color: '#92400e',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}>
+                            <Clock size={12} /> Pending
+                          </span>
+                        )}
+                        {inq.status === 'replied_email' && (
+                          <span style={{
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            backgroundColor: '#e0f2fe',
+                            color: '#0369a1',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}>
+                            <Mail size={12} /> Email Sent
+                          </span>
+                        )}
+                        {inq.status === 'resolved_phone' && (
+                          <span style={{
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            backgroundColor: '#dcfce7',
+                            color: '#166534',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}>
+                            <PhoneCall size={12} /> Resolved (Phone)
+                          </span>
+                        )}
+                        {inq.status === 'closed' && (
+                          <span style={{
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            backgroundColor: '#f1f5f9',
+                            color: '#475569',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}>
+                            <CheckCircle size={12} /> Closed
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                          <button
+                            onClick={() => {
+                              setReplyModalInquiry(inq);
+                              setEmailSubjectInput(`Re: Evy's Medics Store Inquiry — ${inq.enquiryType.replace('-', ' ')}`);
+                              setEmailReplyMessageInput(`Dear ${inq.fullName},\n\nThank you for reaching out to Evy's Medics Store regarding your inquiry.\n\n`);
+                            }}
+                            title="Reply via Email"
+                            style={{
+                              padding: '5px 9px',
+                              backgroundColor: '#0d9488',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: '4px',
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <Mail size={13} /> Email
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setPhoneModalInquiry(inq);
+                              setPhoneNotesInput(inq.resolvedNotes || '');
+                            }}
+                            title="Resolve via Phone"
+                            style={{
+                              padding: '5px 9px',
+                              backgroundColor: '#f0fdf4',
+                              color: '#166534',
+                              border: '1px solid #bbf7d0',
+                              borderRadius: '4px',
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <PhoneCall size={13} /> Phone
+                          </button>
+
+                          <button
+                            onClick={() => setViewDetailInquiry(inq)}
+                            title="View Details"
+                            style={{
+                              padding: '5px 8px',
+                              backgroundColor: '#f1f5f9',
+                              color: '#475569',
+                              border: '1px solid #cbd5e1',
+                              borderRadius: '4px',
+                              fontSize: '0.75rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <Eye size={13} />
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteInquiry(inq.id, inq.fullName)}
+                            title="Delete Inquiry"
+                            style={{
+                              padding: '5px 7px',
+                              backgroundColor: '#fee2e2',
+                              color: '#991b1b',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* MODAL: EMAIL REPLY */}
+      {replyModalInquiry && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '12px',
+            maxWidth: '640px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            padding: '28px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '14px' }}>
+              <div>
+                <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>DIRECT EMAIL DISPATCH</div>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: '4px 0 0 0' }}>
+                  Reply to {replyModalInquiry.fullName}
+                </h2>
+                <div style={{ fontSize: '0.825rem', color: '#0d9488', fontWeight: 600 }}>
+                  Recipient: {replyModalInquiry.email}
+                </div>
+              </div>
+              <button
+                onClick={() => setReplyModalInquiry(null)}
+                style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Original Inquiry Quote Box */}
+            <div style={{ backgroundColor: '#f8fafc', borderLeft: '4px solid #0d9488', padding: '12px 14px', borderRadius: '0 6px 6px 0', marginBottom: '18px', fontSize: '0.85rem' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>
+                Customer Inquiry ({replyModalInquiry.enquiryType.replace('-', ' ')})
+              </div>
+              <div style={{ color: '#334155', fontStyle: 'italic', lineHeight: 1.4 }}>
+                "{replyModalInquiry.message}"
+              </div>
+            </div>
+
+            <form onSubmit={handleSendEmailReply} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  Email Subject
+                </label>
+                <input
+                  type="text"
+                  value={emailSubjectInput}
+                  onChange={(e) => setEmailSubjectInput(e.target.value)}
+                  required
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  Response Message *
+                </label>
+                <textarea
+                  rows={6}
+                  value={emailReplyMessageInput}
+                  onChange={(e) => setEmailReplyMessageInput(e.target.value)}
+                  required
+                  placeholder="Type your official response to the customer here..."
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', resize: 'vertical' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+                <button
+                  type="button"
+                  onClick={() => setReplyModalInquiry(null)}
+                  disabled={isSendingReply}
+                  style={{
+                    padding: '9px 16px',
+                    backgroundColor: '#f1f5f9',
+                    color: '#475569',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSendingReply}
+                  style={{
+                    padding: '9px 20px',
+                    backgroundColor: '#0d9488',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    cursor: isSendingReply ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  {isSendingReply ? <RefreshCw size={16} className="animate-spin" /> : <Send size={16} />}
+                  {isSendingReply ? 'Dispatching Email...' : 'Send Email via Brevo'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: RESOLVE VIA PHONE */}
+      {phoneModalInquiry && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '12px',
+            maxWidth: '540px',
+            width: '100%',
+            padding: '28px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ padding: '8px', backgroundColor: '#f0fdf4', borderRadius: '8px', color: '#166534' }}>
+                  <PhoneCall size={20} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                    Resolve via Telephone Call
+                  </h3>
+                  <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                    Customer: <strong>{phoneModalInquiry.fullName}</strong>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setPhoneModalInquiry(null)}
+                style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Telephone Call Action Box */}
+            <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '14px', marginBottom: '18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#166534', textTransform: 'uppercase' }}>Phone Number</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#14532d', fontFamily: 'monospace' }}>
+                  {phoneModalInquiry.phone || 'No phone number provided'}
+                </div>
+              </div>
+              {phoneModalInquiry.phone && (
+                <a
+                  href={`tel:${phoneModalInquiry.phone}`}
+                  style={{
+                    padding: '8px 14px',
+                    backgroundColor: '#166534',
+                    color: '#ffffff',
+                    borderRadius: '6px',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <PhoneCall size={14} /> Call Now
+                </a>
+              )}
+            </div>
+
+            <form onSubmit={handleResolveViaPhone} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  Resolution Notes *
+                </label>
+                <textarea
+                  rows={4}
+                  required
+                  placeholder="e.g. Spoke with Dr. Eleanor Vance, confirmed bulk quote for 50 surgical kits, sent invoice to clinic."
+                  value={phoneNotesInput}
+                  onChange={(e) => setPhoneNotesInput(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.875rem', resize: 'vertical' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setPhoneModalInquiry(null)}
+                  disabled={isResolvingPhone}
+                  style={{
+                    padding: '9px 16px',
+                    backgroundColor: '#f1f5f9',
+                    color: '#475569',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isResolvingPhone}
+                  style={{
+                    padding: '9px 18px',
+                    backgroundColor: '#166534',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    cursor: isResolvingPhone ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  {isResolvingPhone ? <RefreshCw size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                  {isResolvingPhone ? 'Saving...' : 'Mark Resolved via Phone'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: VIEW INQUIRY DETAILS */}
+      {viewDetailInquiry && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '12px',
+            maxWidth: '600px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            padding: '28px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px', borderBottom: '1px solid #e2e8f0', paddingBottom: '14px' }}>
+              <div>
+                <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>INQUIRY RECORD</div>
+                <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', margin: '4px 0 0 0' }}>
+                  {viewDetailInquiry.fullName}
+                </h2>
+              </div>
+              <button
+                onClick={() => setViewDetailInquiry(null)}
+                style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Customer Information Grid */}
+            <div style={{ backgroundColor: '#f8fafc', padding: '16px', borderRadius: '8px', marginBottom: '18px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '0.85rem' }}>
+              <div>
+                <div style={{ color: '#64748b' }}>Email Address</div>
+                <div style={{ fontWeight: 700, color: '#0f172a' }}>{viewDetailInquiry.email}</div>
+              </div>
+              <div>
+                <div style={{ color: '#64748b' }}>Phone Number</div>
+                <div style={{ fontWeight: 700, color: '#0f172a' }}>{viewDetailInquiry.phone || 'N/A'}</div>
+              </div>
+              <div>
+                <div style={{ color: '#64748b' }}>Organisation</div>
+                <div style={{ fontWeight: 700, color: '#0f172a' }}>{viewDetailInquiry.organisation || 'N/A'}</div>
+              </div>
+              <div>
+                <div style={{ color: '#64748b' }}>Department</div>
+                <div style={{ fontWeight: 700, color: '#0f172a', textTransform: 'capitalize' }}>{viewDetailInquiry.enquiryType.replace('-', ' ')}</div>
+              </div>
+            </div>
+
+            {/* Message Body */}
+            <div style={{ marginBottom: '18px' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>Original Message</div>
+              <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '14px', fontSize: '0.875rem', color: '#334155', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                {viewDetailInquiry.message}
+              </div>
+            </div>
+
+            {/* Email Reply or Phone Notes */}
+            {viewDetailInquiry.adminReply && (
+              <div style={{ marginBottom: '18px' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0369a1', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Mail size={14} /> Email Response Sent
+                </div>
+                <div style={{ backgroundColor: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '8px', padding: '14px', fontSize: '0.875rem', color: '#0c4a6e', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                  {viewDetailInquiry.adminReply}
+                </div>
+              </div>
+            )}
+
+            {viewDetailInquiry.resolvedNotes && (
+              <div style={{ marginBottom: '18px' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#166534', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <PhoneCall size={14} /> Telephone Resolution Notes
+                </div>
+                <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '14px', fontSize: '0.875rem', color: '#14532d', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                  {viewDetailInquiry.resolvedNotes}
+                </div>
+              </div>
+            )}
+
+            {/* Status Control */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', paddingTop: '16px', marginTop: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>Change Status:</span>
+                <select
+                  value={viewDetailInquiry.status}
+                  onChange={(e) => {
+                    handleUpdateInquiryStatus(viewDetailInquiry.id, e.target.value);
+                    setViewDetailInquiry({ ...viewDetailInquiry, status: e.target.value as any });
+                  }}
+                  style={{
+                    padding: '6px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.85rem',
+                    backgroundColor: '#ffffff'
+                  }}
+                >
+                  <option value="pending">Pending</option>
+                  <option value="replied_email">Replied via Email</option>
+                  <option value="resolved_phone">Resolved via Phone</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+
+              <button
+                onClick={() => setViewDetailInquiry(null)}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#0d9488',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Close
               </button>
             </div>
           </div>

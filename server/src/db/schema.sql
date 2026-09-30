@@ -151,6 +151,24 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 12. Contact Inquiries Table (Customer Outreach & Admin Resolution)
+CREATE TABLE IF NOT EXISTS contact_inquiries (
+  id VARCHAR(64) PRIMARY KEY,
+  full_name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  phone VARCHAR(64),
+  organisation VARCHAR(255),
+  enquiry_type VARCHAR(64) NOT NULL DEFAULT 'general',
+  message TEXT NOT NULL,
+  status VARCHAR(32) NOT NULL DEFAULT 'pending', -- pending, replied_email, resolved_phone, closed
+  admin_reply TEXT,
+  replied_at TIMESTAMPTZ,
+  resolved_notes TEXT,
+  resolved_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Indexes for Fast Querying & Filtering
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_subcategory ON products(subcategory_id);
@@ -175,4 +193,6 @@ CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_reset_token ON password_reset_tokens(token_hash);
+CREATE INDEX IF NOT EXISTS idx_inquiries_status ON contact_inquiries(status);
+CREATE INDEX IF NOT EXISTS idx_inquiries_created ON contact_inquiries(created_at DESC);
 
