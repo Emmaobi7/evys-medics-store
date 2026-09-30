@@ -111,7 +111,7 @@ export async function sendOrderPaymentConfirmationEmail(
         <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; background: #FFFFFF; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
           <!-- Header -->
           <tr>
-            <td style="background-color: #0D9488; padding: 28px 32px; text-align: center; color: #FFFFFF;">
+            <td style="background-color: #012EA2; padding: 28px 32px; text-align: center; color: #FFFFFF;">
               <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">EVY'S MEDICS STORE</h1>
               <p style="margin: 6px 0 0 0; font-size: 14px; opacity: 0.9;">Order Payment & Confirmation Receipt</p>
             </td>
@@ -173,12 +173,12 @@ export async function sendOrderPaymentConfirmationEmail(
                 </tr>
                 <tr style="border-top: 2px dashed #CBD5E1; font-size: 18px; font-weight: 800;">
                   <td style="padding-top: 10px; color: #0F172A;">Total Paid (Tax-Inclusive):</td>
-                  <td style="padding-top: 10px; text-align: right; color: #0D9488;">${totalFormatted}</td>
+                  <td style="padding-top: 10px; text-align: right; color: #012EA2;">${totalFormatted}</td>
                 </tr>
               </table>
 
               <div style="background-color: #F8FAFC; border-radius: 8px; padding: 16px; font-size: 13px; color: #64748B; line-height: 1.5;">
-                <strong>Need Support?</strong> If you have questions regarding dispatch or technical documentation, contact support at <a href="mailto:support@evysmedics.co.uk" style="color: #0D9488; text-decoration: none;">support@evysmedics.co.uk</a>.
+                <strong>Need Support?</strong> If you have questions regarding dispatch or technical documentation, contact support at <a href="mailto:support@evysmedics.co.uk" style="color: #012EA2; text-decoration: none;">support@evysmedics.co.uk</a>.
               </div>
             </td>
           </tr>
@@ -292,7 +292,7 @@ export async function sendPasswordResetEmail(
         <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 560px; margin: 0 auto; background: #FFFFFF; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
           <!-- Header -->
           <tr>
-            <td style="background-color: #0D9488; padding: 28px 32px; text-align: center; color: #FFFFFF;">
+            <td style="background-color: #012EA2; padding: 28px 32px; text-align: center; color: #FFFFFF;">
               <h1 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">EVY'S MEDICS STORE</h1>
               <p style="margin: 6px 0 0 0; font-size: 14px; opacity: 0.9;">Password Reset Request</p>
             </td>
@@ -307,7 +307,7 @@ export async function sendPasswordResetEmail(
               </p>
 
               <div style="text-align: center; margin: 32px 0;">
-                <a href="${resetUrl}" style="background-color: #0D9488; color: #FFFFFF; padding: 14px 28px; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 8px; display: inline-block; box-shadow: 0 2px 4px rgba(13, 148, 136, 0.2);">
+                <a href="${resetUrl}" style="background-color: #012EA2; color: #FFFFFF; padding: 14px 28px; font-size: 15px; font-weight: 700; text-decoration: none; border-radius: 8px; display: inline-block; box-shadow: 0 2px 4px rgba(1, 46, 162, 0.2);">
                   Reset Your Password
                 </a>
               </div>
@@ -315,7 +315,7 @@ export async function sendPasswordResetEmail(
               <p style="font-size: 14px; line-height: 1.6; color: #64748B; margin-bottom: 16px;">
                 Or copy and paste this link into your browser:
                 <br>
-                <a href="${resetUrl}" style="color: #0D9488; word-break: break-all; font-size: 13px;">${resetUrl}</a>
+                <a href="${resetUrl}" style="color: #012EA2; word-break: break-all; font-size: 13px;">${resetUrl}</a>
               </p>
 
               <div style="background-color: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 14px 16px; margin-top: 24px; font-size: 13px; color: #92400E; line-height: 1.5;">
@@ -425,7 +425,7 @@ export async function sendInquiryReplyEmail(
         <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; background: #FFFFFF; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
           <!-- Header -->
           <tr>
-            <td style="background-color: #0D9488; padding: 28px 32px; text-align: center; color: #FFFFFF;">
+            <td style="background-color: #012EA2; padding: 28px 32px; text-align: center; color: #FFFFFF;">
               <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">EVY'S MEDICS STORE</h1>
               <p style="margin: 6px 0 0 0; font-size: 14px; opacity: 0.9;">Clinical & Procurement Support</p>
             </td>
@@ -443,7 +443,7 @@ ${replyMessage}
               ${
                 originalMessage
                   ? `
-              <div style="background-color: #F1F5F9; border-left: 4px solid #0D9488; padding: 14px 16px; margin-top: 24px; border-radius: 0 8px 8px 0;">
+              <div style="background-color: #F1F5F9; border-left: 4px solid #012EA2; padding: 14px 16px; margin-top: 24px; border-radius: 0 8px 8px 0;">
                 <div style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; margin-bottom: 6px;">Your Original Inquiry</div>
                 <div style="font-size: 13px; color: #475569; font-style: italic; line-height: 1.5; white-space: pre-wrap;">${originalMessage}</div>
               </div>
@@ -453,7 +453,7 @@ ${replyMessage}
 
               <div style="margin-top: 32px; padding-top: 20px; border-top: 1px solid #E2E8F0; font-size: 13px; color: #64748B; line-height: 1.5;">
                 <strong>Evy's Medics Specialist Support Team</strong><br>
-                For direct orders and emergency supplies: <a href="mailto:admin@evysmedics.co.uk" style="color: #0D9488; text-decoration: none;">admin@evysmedics.co.uk</a>
+                For direct orders and emergency supplies: <a href="mailto:admin@evysmedics.co.uk" style="color: #012EA2; text-decoration: none;">admin@evysmedics.co.uk</a>
               </div>
             </td>
           </tr>

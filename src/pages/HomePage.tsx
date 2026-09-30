@@ -7,6 +7,7 @@ import { CategoryGrid } from '../components/CategoryGrid';
 import { ProductGrid } from '../components/ProductGrid';
 import { TrustSection } from '../components/TrustSection';
 import { Button } from '../components/Button';
+import { SearchBar } from '../components/SearchBar';
 import { Product } from '../types';
 import { formatNaira } from '../utils/money';
 
@@ -55,8 +56,14 @@ export const HomePage: React.FC<HomePageProps> = ({
         <div className="container">
           <div className="hero-grid">
             <div>
-              <div className="hero-pill-badge">
-                <span>Medical &amp; Laboratory Supplies</span>
+              <div className="hero-search-container">
+                <SearchBar
+                  variant="hero"
+                  placeholder="Search Medical & Laboratory Supplies, SKU..."
+                  onSelectProduct={onSelectProduct}
+                  onViewAllResults={(query) => onNavigate('shop', { search: query })}
+                  onSelectCategory={(catId) => onNavigate('shop', { category: catId })}
+                />
               </div>
 
               <h1 className="hero-title">

@@ -1,6 +1,6 @@
 /* ==========================================================================
    EVY'S PROJECTS DESIGN SYSTEM & CORE STYLES
-   Visual System: Ink #0B1726 | Primary Teal #087E8B | Accent Teal #18A6B8
+   Visual System: Ink #0B1726 | Primary Blue #012EA2 | Accent Blue #0284C7
    Background #F6F8FA | White #FFFFFF | Border #E5E9EE | Muted #667085 | Success #16803C
    ========================================================================== */
 
@@ -8,11 +8,11 @@
   /* Color Tokens */
   --color-ink: #0B1726;
   --color-ink-rgb: 11, 23, 38;
-  --color-primary: #087E8B;
-  --color-primary-dark: #06626d;
-  --color-primary-light: #e6f6f8;
-  --color-accent: #18A6B8;
-  --color-accent-subtle: #f0fafb;
+  --color-primary: #012EA2;
+  --color-primary-dark: #002277;
+  --color-primary-light: #EFF6FF;
+  --color-accent: #0284C7;
+  --color-accent-subtle: #F0F9FF;
   --color-bg: #F6F8FA;
   --color-white: #FFFFFF;
   --color-border: #E5E9EE;
@@ -184,7 +184,7 @@ button, input, select, textarea {
 .site-header {
   position: sticky;
   top: 0;
-  z-index: 50;
+  z-index: 1000;
   background-color: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -192,6 +192,21 @@ button, input, select, textarea {
   transition: box-shadow var(--transition-fast), background-color var(--transition-fast);
   width: 100%;
   box-sizing: border-box;
+}
+
+@keyframes slideDownDrawer {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mobile-nav-panel {
+  animation: slideDownDrawer 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .site-header.scrolled {
@@ -557,6 +572,48 @@ button, input, select, textarea {
   align-items: center;
 }
 
+.hero-search-container {
+  width: 100%;
+  max-width: 480px;
+  margin-bottom: 20px;
+}
+
+.hero-search-box {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 100%;
+}
+
+.hero-search-box .header-search-input,
+.hero-search-box .hero-search-input {
+  width: 100%;
+  padding: 12px 16px 12px 42px;
+  background-color: var(--color-white);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  color: var(--color-ink);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.hero-search-box .header-search-input:focus,
+.hero-search-box .hero-search-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(1, 46, 162, 0.15), var(--shadow-md);
+  width: 100%;
+}
+
+.hero-search-box .header-search-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--color-primary);
+  pointer-events: none;
+}
+
 .hero-pill-badge {
   display: inline-flex;
   align-items: center;
@@ -568,7 +625,7 @@ button, input, select, textarea {
   font-size: 0.8125rem;
   font-weight: 600;
   margin-bottom: 16px;
-  border: 1px solid rgba(8, 126, 139, 0.2);
+  border: 1px solid rgba(1, 46, 162, 0.2);
 }
 
 .hero-title {
@@ -1024,7 +1081,7 @@ button, input, select, textarea {
 
 /* Promotional Spotlight Banner */
 .promo-banner {
-  background: linear-gradient(135deg, #0B1726 0%, #0F2238 60%, #087E8B 100%);
+  background: linear-gradient(135deg, #0B1726 0%, #081B4E 60%, #012EA2 100%);
   color: var(--color-white);
   border-radius: var(--radius-xl);
   padding: 36px 28px;
@@ -1696,7 +1753,7 @@ button, input, select, textarea {
    Prevents all horizontal overflows, wrapping blowout, and sideways jitter
    ========================================================================== */
 
-@media (min-width: 769px) {
+@media (min-width: 1025px) {
   .mobile-only {
     display: none !important;
   }
@@ -1740,14 +1797,9 @@ button, input, select, textarea {
   .footer-brand-col {
     grid-column: span 2;
   }
-}
 
-@media (max-width: 768px) {
-  :root {
-    --container-padding: 16px;
-  }
-
-  .desktop-only {
+  /* Header compact mobile & tablet layout */
+  .desktop-only, .desktop-nav, .header-search-box, .quick-order-header-btn, .admin-switcher-header-btn {
     display: none !important;
   }
 
@@ -1755,29 +1807,81 @@ button, input, select, textarea {
     display: flex !important;
   }
 
-  /* Header compact mobile layout */
-  .desktop-nav, .header-search-box, .quick-order-header-btn {
-    display: none !important;
-  }
   .mobile-toggle-btn {
-    display: flex !important;
+    display: inline-flex !important;
+    min-width: 38px;
+    width: 38px;
+    height: 38px;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-ink);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .mobile-toggle-btn:hover, .mobile-toggle-btn:active {
+    background-color: var(--color-primary-light);
+    color: var(--color-primary);
+    border-color: var(--color-primary);
   }
 
   .header-inner {
-    height: 60px;
+    height: 58px;
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+    justify-content: space-between;
+  }
+
+  .brand-logo {
+    min-width: 0;
+    max-width: calc(100vw - 150px);
+    overflow: hidden;
     gap: 8px;
   }
 
   .brand-logo img {
     height: 30px !important;
+    width: auto !important;
+    flex-shrink: 0;
+  }
+
+  .logo-text-wrap {
+    min-width: 0;
+    overflow: hidden;
   }
 
   .logo-name {
     font-size: 0.9375rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .logo-tagline {
-    display: none;
+    display: none !important;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .action-btn {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --container-padding: 14px;
   }
 
   /* Announcement Bar Mobile */

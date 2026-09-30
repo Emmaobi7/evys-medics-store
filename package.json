@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "start": "tsx server/src/index.ts",
     "server": "tsx watch server/src/index.ts",
     "server:dev": "tsx watch server/src/index.ts",
     "db:migrate": "tsx server/src/db/migrate.ts",

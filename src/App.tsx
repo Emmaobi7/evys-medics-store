@@ -148,14 +148,14 @@ function AppContent() {
                 width: '56px',
                 height: '56px',
                 borderRadius: '50%',
-                backgroundColor: 'var(--color-primary-light, #E6FFFA)',
-                color: 'var(--color-primary, #0D9488)',
+                backgroundColor: 'var(--color-primary-light, #EFF6FF)',
+                color: 'var(--color-primary, #012EA2)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 margin: '0 auto 16px auto'
               }}>
-                <div style={{ width: '24px', height: '24px', border: '3px solid #0D9488', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                <div style={{ width: '24px', height: '24px', border: '3px solid var(--color-primary, #012EA2)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
               </div>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--color-ink)' }}>Loading Product Specifications...</h2>
               <p style={{ color: 'var(--color-muted)', marginTop: '6px', fontSize: '0.9rem' }}>Fetching clinical documentation &amp; stock levels</p>

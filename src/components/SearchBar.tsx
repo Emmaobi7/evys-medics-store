@@ -10,12 +10,18 @@ interface SearchBarProps {
   onSelectProduct?: (product: Product) => void;
   onViewAllResults?: (query: string) => void;
   onSelectCategory?: (categoryId: string) => void;
+  placeholder?: string;
+  variant?: 'header' | 'hero';
+  className?: string;
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({
   onSelectProduct,
   onViewAllResults,
   onSelectCategory,
+  placeholder = 'Search products, SKU...',
+  variant = 'header',
+  className = '',
 }) => {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -142,14 +148,14 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   return (
-    <div className="header-search-box" ref={searchRef} style={{ width: '100%', position: 'relative' }}>
+    <div className={`${variant === 'hero' ? 'hero-search-box' : 'header-search-box'} ${className}`.trim()} ref={searchRef} style={{ width: '100%', position: 'relative' }}>
       <form onSubmit={handleFormSubmit} style={{ width: '100%', position: 'relative' }}>
-        <Search className="header-search-icon" size={16} aria-hidden="true" />
+        <Search className="header-search-icon" size={variant === 'hero' ? 18 : 16} aria-hidden="true" />
         <input
           ref={inputRef}
           type="text"
-          placeholder="Search products, SKU..."
-          className="header-search-input"
+          placeholder={placeholder}
+          className={variant === 'hero' ? 'hero-search-input header-search-input' : 'header-search-input'}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);

@@ -512,8 +512,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
             width: '56px',
             height: '56px',
             borderRadius: '50%',
-            backgroundColor: '#e6fffa',
-            color: '#0d9488',
+            backgroundColor: '#eff4ff',
+            color: '#012ea2',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'
@@ -547,7 +547,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
           boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-            <div style={{ padding: '10px', backgroundColor: '#e6fffa', borderRadius: '8px', color: '#0d9488' }}>
+            <div style={{ padding: '10px', backgroundColor: '#eff4ff', borderRadius: '8px', color: '#012ea2' }}>
               <ShieldCheck size={28} />
             </div>
             <div>
@@ -623,7 +623,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
               style={{
                 marginTop: '8px',
                 padding: '12px',
-                backgroundColor: '#0d9488',
+                backgroundColor: '#012ea2',
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: '6px',
@@ -682,7 +682,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{
-              backgroundColor: '#0d9488',
+              backgroundColor: '#012ea2',
               color: '#ffffff',
               padding: '2px 8px',
               borderRadius: '4px',
@@ -749,7 +749,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
             padding: '10px 20px',
             borderRadius: '8px',
             border: 'none',
-            backgroundColor: activeTab === 'products' ? '#0d9488' : '#f8fafc',
+            backgroundColor: activeTab === 'products' ? '#012ea2' : '#f8fafc',
             color: activeTab === 'products' ? '#ffffff' : '#475569',
             fontWeight: 700,
             fontSize: '0.95rem',
@@ -768,7 +768,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
             padding: '10px 20px',
             borderRadius: '8px',
             border: 'none',
-            backgroundColor: activeTab === 'orders' ? '#0d9488' : '#f8fafc',
+            backgroundColor: activeTab === 'orders' ? '#012ea2' : '#f8fafc',
             color: activeTab === 'orders' ? '#ffffff' : '#475569',
             fontWeight: 700,
             fontSize: '0.95rem',
@@ -787,7 +787,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
             padding: '10px 20px',
             borderRadius: '8px',
             border: 'none',
-            backgroundColor: activeTab === 'inquiries' ? '#0d9488' : '#f8fafc',
+            backgroundColor: activeTab === 'inquiries' ? '#012ea2' : '#f8fafc',
             color: activeTab === 'inquiries' ? '#ffffff' : '#475569',
             fontWeight: 700,
             fontSize: '0.95rem',
@@ -858,7 +858,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
                 onClick={() => setIsAddModalOpen(true)}
                 style={{
                   padding: '9px 18px',
-                  backgroundColor: '#0d9488',
+                  backgroundColor: '#012ea2',
                   color: '#ffffff',
                   border: 'none',
                   borderRadius: '6px',
@@ -900,7 +900,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
                 onClick={() => setIsAddModalOpen(true)}
                 style={{
                   padding: '10px 20px',
-                  backgroundColor: '#0d9488',
+                  backgroundColor: '#012ea2',
                   color: '#ffffff',
                   border: 'none',
                   borderRadius: '6px',
@@ -1162,7 +1162,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
                   }}
                   style={{
                     padding: '8px 16px',
-                    backgroundColor: '#0d9488',
+                    backgroundColor: '#012ea2',
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: '6px',
@@ -1241,7 +1241,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
                             />
                             <button
                               onClick={() => handleUpdateDeliveryFee(ord.id)}
-                              style={{ padding: '4px 8px', backgroundColor: '#0d9488', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                              style={{ padding: '4px 8px', backgroundColor: '#012ea2', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                             >
                               <Save size={14} />
                             </button>
@@ -1264,7 +1264,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
                                 style={{
                                   background: 'none',
                                   border: 'none',
-                                  color: '#0d9488',
+                                  color: '#012ea2',
                                   fontSize: '0.75rem',
                                   cursor: 'pointer',
                                   textDecoration: 'underline'
@@ -1321,7 +1321,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
                           onClick={() => setSelectedOrderForDetail(ord)}
                           style={{
                             padding: '6px 12px',
-                            backgroundColor: '#0d9488',
+                            backgroundColor: '#012ea2',
                             color: '#ffffff',
                             border: 'none',
                             borderRadius: '6px',
@@ -1396,7 +1396,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
                   <div style={{ color: '#475569' }}>📞 {selectedOrderForDetail.customerPhone}</div>
                 )}
                 {selectedOrderForDetail.clinicName && (
-                  <div style={{ color: '#0d9488', fontWeight: 600, marginTop: '2px' }}>🏥 {selectedOrderForDetail.clinicName}</div>
+                  <div style={{ color: '#012ea2', fontWeight: 600, marginTop: '2px' }}>🏥 {selectedOrderForDetail.clinicName}</div>
                 )}
               </div>
 
@@ -1458,7 +1458,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #cbd5e1', paddingTop: '8px', fontSize: '1.05rem', fontWeight: 800 }}>
                 <span style={{ color: '#0f172a' }}>Total Amount:</span>
-                <span style={{ color: '#0d9488' }}>{formatNaira(selectedOrderForDetail.totalAmount)}</span>
+                <span style={{ color: '#012ea2' }}>{formatNaira(selectedOrderForDetail.totalAmount)}</span>
               </div>
             </div>
 
@@ -1468,7 +1468,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
                 onClick={() => setSelectedOrderForDetail(null)}
                 style={{
                   padding: '9px 18px',
-                  backgroundColor: '#0d9488',
+                  backgroundColor: '#012ea2',
                   color: '#ffffff',
                   border: 'none',
                   borderRadius: '6px',
@@ -1591,7 +1591,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
                   }}
                   style={{
                     padding: '8px 16px',
-                    backgroundColor: '#0d9488',
+                    backgroundColor: '#012ea2',
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: '6px',
@@ -1637,7 +1637,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
                       <td style={{ padding: '12px 16px' }}>
                         <div style={{ fontWeight: 700, color: '#0f172a' }}>{inq.fullName}</div>
                         <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
-                          <a href={`mailto:${inq.email}`} style={{ color: '#0d9488', textDecoration: 'none' }}>{inq.email}</a>
+                          <a href={`mailto:${inq.email}`} style={{ color: '#012ea2', textDecoration: 'none' }}>{inq.email}</a>
                         </div>
                         {inq.phone && (
                           <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '2px' }}>
@@ -1747,7 +1747,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
                             title="Reply via Email"
                             style={{
                               padding: '5px 9px',
-                              backgroundColor: '#0d9488',
+                              backgroundColor: '#012ea2',
                               color: '#ffffff',
                               border: 'none',
                               borderRadius: '4px',
@@ -1858,7 +1858,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: '4px 0 0 0' }}>
                   Reply to {replyModalInquiry.fullName}
                 </h2>
-                <div style={{ fontSize: '0.825rem', color: '#0d9488', fontWeight: 600 }}>
+                <div style={{ fontSize: '0.825rem', color: '#012ea2', fontWeight: 600 }}>
                   Recipient: {replyModalInquiry.email}
                 </div>
               </div>
@@ -1871,7 +1871,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
             </div>
 
             {/* Original Inquiry Quote Box */}
-            <div style={{ backgroundColor: '#f8fafc', borderLeft: '4px solid #0d9488', padding: '12px 14px', borderRadius: '0 6px 6px 0', marginBottom: '18px', fontSize: '0.85rem' }}>
+            <div style={{ backgroundColor: '#f8fafc', borderLeft: '4px solid #012ea2', padding: '12px 14px', borderRadius: '0 6px 6px 0', marginBottom: '18px', fontSize: '0.85rem' }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>
                 Customer Inquiry ({replyModalInquiry.enquiryType.replace('-', ' ')})
               </div>
@@ -1931,7 +1931,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
                   disabled={isSendingReply}
                   style={{
                     padding: '9px 20px',
-                    backgroundColor: '#0d9488',
+                    backgroundColor: '#012ea2',
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: '6px',
@@ -2207,7 +2207,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
                 onClick={() => setViewDetailInquiry(null)}
                 style={{
                   padding: '8px 16px',
-                  backgroundColor: '#0d9488',
+                  backgroundColor: '#012ea2',
                   color: '#ffffff',
                   border: 'none',
                   borderRadius: '6px',
@@ -2251,7 +2251,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ padding: '8px', backgroundColor: '#e6fffa', borderRadius: '8px', color: '#0d9488' }}>
+                <div style={{ padding: '8px', backgroundColor: '#eff4ff', borderRadius: '8px', color: '#012ea2' }}>
                   <Plus size={22} />
                 </div>
                 <div>
@@ -2436,7 +2436,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigateHome, onNavigate
                   disabled={isSubmittingProduct}
                   style={{
                     padding: '10px 24px',
-                    backgroundColor: '#0d9488',
+                    backgroundColor: '#012ea2',
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: '6px',
